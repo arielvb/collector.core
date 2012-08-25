@@ -21,6 +21,8 @@ class PersitenceManager():
 
     def get(self, _id):
         # TODO validate id is integer
+        if isinstance(_id, str):
+            _id = int(_id)
         for a in self.items:
             if _id == a['id']:
                 return a

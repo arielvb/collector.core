@@ -1,5 +1,6 @@
-from engine.persistence import PersitenceManager
-from engine.config import Config
+# -*- coding: utf-8 -*-
+from persistence import PersitenceManager
+from config import Config
 from schema import SchemaManager
 
 counter = 0
@@ -39,8 +40,8 @@ class Collection():
         self.schema = SchemaManager.getInstance().get(self.name)
         self.db = CollectionManager.getInstance().getPersistence(collectionName)
 
-    def getFullName(self):
-        self.schema.getFullName()
+    def getName(self):
+        return self.schema.name
 
     def getLast10(self):
         """ Finds last items created at the collection."""

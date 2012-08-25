@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
 from tests import mocks
 
-class Schema():
+
+class Schema(object):
     """
         Schema class
     """
 
     def __init__(self, dictConfig=None):
+        super(Schema, self).__init__()
         self.name = None
         self.fields = {}
         self.order = []
