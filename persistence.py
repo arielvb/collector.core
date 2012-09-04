@@ -1,22 +1,51 @@
 # -*- coding: utf-8 -*-
-
-from tests import mocks
 #TODO redo all the class, we need to use sqlite3, or sqlalchemy
 
 
-class PersitenceManager():
+class Persistence(object):
+    """Abstract class for Persitence"""
+
+    def __init__(self, collectionName, params={}):
+        super(Persistence, self).__init__()
+        if not isinstance(params, dict):
+            raise Exception('Params are not a dict')
+
+    def get(self):
+        pass
+
+    def getAll(self):
+        pass
+
+    def getLast(self):
+        pass
+
+    def search(self):
+        pass
+
+    def save(self):
+        pass
+
+
+class PersistenceDict(Persistence):
+    """Implementation of persistence using a python dictionary"""
 
     _autoid = 1
 
-    def __init__(self, collectionName):
-        self.items = collectionName == 'boardgames' and mocks.boardgames or mocks.people
+    def __init__(self, collectionName, params={}):
+        super(PersistenceDict, self).__init__(params)
+        # Obtain items from the params
+        self.items = params[collectionName]
         maxid = 0
         for i in self.items:
             maxid = max(maxid, i['id'])
         self._autoid = maxid + 1
 
     def getLast(self, count):
-        result = self.items[:count]
+        """Returns the last items created, the number of items
+         are defined with the count parameter, the items are orderded by last inserted"""
+        result = self.items[-count:]
+        # Reverse the count
+        result.reverse()
         return result
 
     def get(self, _id):
@@ -31,6 +60,14 @@ class PersitenceManager():
     def getAll(self, startAt, limit):
         return self.items
 
+    def search(self, term):
+        results = []
+        term = term.lower()
+        for item in self.items:
+            if item['name'].lower().find(term) != -1:
+                results.append(item)
+        return results
+
     def save(self, item):
         #TODO !
         if 'id' in item:
@@ -42,5 +79,32 @@ class PersitenceManager():
             self._autoid += 1
             self.items.append(item)
 
-if __name__ == '__main__':
-    PersitenceManager()
+
+_counter = 0
+
+
+class PersistenceManager(object):
+    """PersistenceManager loads the correct persistence form the input parameters"""
+
+    def __init__(self):
+        global _counter
+        if _counter > 0:
+            raise Exception('Called more that once')
+        _counter = 1
+
+        super(PersistenceManager, self).__init__()
+        self.storageEngine = {
+            'dict': PersistenceDict
+        }
+
+    def getStorage(self, collectionName, storage, params):
+        # TODO add storage cache
+        return self.storageEngine[storage](collectionName, params)
+
+    @staticmethod
+    def getInstance():
+        global _managerInstace
+        return _managerInstace
+
+
+_managerInstace = PersistenceManager()

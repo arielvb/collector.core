@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 class PluginMethodNotImplemented(Exception):
 
     def __init__(self):
@@ -27,6 +30,11 @@ class PluginManager():
         }
 
         self.enabled = enalbed
+
+    def look_for_plugins(self):
+        # TODO
+        import glob
+        print glob.glob('/Users/arkow/universidad/pfc/app/data/user_plugins/*.py')
 
     def get(self, name):
         return self.receipes[name]

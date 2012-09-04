@@ -5,13 +5,17 @@ from collection import CollectionManager
 class Field():
 
     _class = ''
+    name = ''
     reference = None
+    singleValue = True
+    value = None
 
     def __init__(self, name, multiple=False, params=None):
         if multiple:
             self.singleValue = False
+            self.value = []
         self.name = name
-        self.params = params
+        self._params = params
 
     @staticmethod
     def _validate_image(field):
@@ -45,8 +49,13 @@ class Field():
             raise Exception('Not a multivalue field')
 
     def setValue(self, value):
-        if self.isMultivalue() and not isinstance(list, value):
+        is_list = isinstance(value, list)
+        is_dict = isinstance(value, dict)
+        if not self.singleValue and not is_list:
             raise Exception("Field is multivalue and the new value isn't not a list")
+        # TODO how to check value is a basic type?
+        elif self.singleValue and is_list or is_dict:
+            raise Exception("Field is not multivalue and the value is a list")
         self.value = value
 
     def getValue(self):
@@ -79,7 +88,7 @@ class FieldRef(Field):
     def __init__(self, name, multiple=False, params=None):
         super(Field, self).__init__(name, multiple, params)
         self._validate()
-        parts = self.params['ref'].split()
+        parts = self._params['ref'].split()
 
         self.ref_collection = parts[0]
         self.ref_field = parts[1]
@@ -87,7 +96,7 @@ class FieldRef(Field):
     def _validate(self):
         if not 'ref' in self.params:
             raise Exception('ref param expected')
-        ref = self.params['ref'].split('.')
+        ref = self._params['ref'].split('.')
         if len(ref) != 2:
             raise Exception('ref param must be [collection].[name]')
 

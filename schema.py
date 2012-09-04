@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from tests import mocks
 
 
 class Schema(object):
@@ -7,16 +6,20 @@ class Schema(object):
         Schema class
     """
 
-    def __init__(self, dictConfig=None):
+    def __init__(self, params=None):
         super(Schema, self).__init__()
         self.name = None
         self.fields = {}
         self.order = []
-        if dictConfig:
-            self.loadFromDict(dictConfig)
+        # TODO icona e imatge per defecte
+        self.ico = None
+        self.image = None
+        self._raw = params
+        if isinstance(params, dict):
+            self.loadFromDict(params)
 
     def loadFromDict(self, config):
-        """Loads schema from a dict"""
+        """Loads schema from a python dictionary"""
         self.name = config['name']
         fields = config['fields']
         self.fields = fields
@@ -39,8 +42,12 @@ class Schema(object):
             self.default = config['default']
         else:
             self.default = self.fields[0]
+        if 'ico' in config:
+            self.ico = config['ico']
+        if 'image' in config:
+            self.image = config['image']
 
-    def isMultiple(self, field):
+    def isMultivalue(self, field):
         if 'multiple' in self.fields[field]:
             return self.fields[field]['multiple']
         else:
@@ -49,40 +56,38 @@ class Schema(object):
 counter = 0
 
 
-class SchemaManager():
+# class SchemaManager():
 
-    def __init__(self):
-        global counter
-        counter += 1
-        if counter > 1:
-            raise Exception('Called more than once')
-        self.schemas = {}
-        # TODO the schemas must be provieded by a SchemaConfig
-        self.schemas['boardgames'] = Schema(mocks.schemas['boardgames'])
-        self.schemas['people'] = Schema(mocks.schemas['people'])
+#     def __init__(self):
+#         global counter
+#         counter += 1
+#         if counter > 1:
+#             raise Exception('Called more than once')
+#         self.schemas = {}
+#         # TODO the schemas must be provieded by a SchemaConfig
+#         schemas = mocks.collections['boardgames']['schemas']
+#         self.schemas['boardgames'] = Schema(schemas['boardgames'])
+#         self.schemas['people'] = Schema(schemas['people'])
 
-    def get(self, name):
-        #TODO implement
-        if name in self.schemas:
-            return self.schemas[name]
-        else:
-            raise Exception('Schema not found')
+#     def get(self, name):
+#         #TODO implement
+#         if name in self.schemas:
+#             return self.schemas[name]
+#         else:
+#             raise Exception('Schema not found')
 
-    def update(self, schema):
-        #TODO
-        raise Exception("Not implemented")
+#     def update(self, schema):
+#         #TODO
+#         raise Exception("Not implemented")
 
-    def create(self, schema):
-        #TODO
-        raise Exception("Not implemented")
+#     def create(self, schema):
+#         #TODO
+#         raise Exception("Not implemented")
 
-    @staticmethod
-    def getInstance():
-        global schemaManagerInstance
-        return schemaManagerInstance
+#     @staticmethod
+#     def getInstance():
+#         global _schemaManagerInstance
+#         return _schemaManagerInstance
 
-schemaManagerInstance = SchemaManager()
+# _schemaManagerInstance = SchemaManager()
 
-
-if __name__ == '__main__':
-    Schema().loadFromDict(mocks.schemas['boardgames'])
