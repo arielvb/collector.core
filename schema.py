@@ -6,7 +6,7 @@ class Schema(object):
         Schema class
     """
 
-    def __init__(self, params=None):
+    def __init__(self, configDict=None):
         super(Schema, self).__init__()
         self.name = None
         self.fields = {}
@@ -14,9 +14,9 @@ class Schema(object):
         # TODO icona e imatge per defecte
         self.ico = None
         self.image = None
-        self._raw = params
-        if isinstance(params, dict):
-            self.loadFromDict(params)
+        if isinstance(configDict, dict):
+            self._raw = configDict
+            self.loadFromDict(configDict)
 
     def loadFromDict(self, config):
         """Loads schema from a python dictionary"""
@@ -48,6 +48,7 @@ class Schema(object):
             self.image = config['image']
 
     def isMultivalue(self, field):
+        """ Returns True if the field is multivalue """
         if 'multiple' in self.fields[field]:
             return self.fields[field]['multiple']
         else:
