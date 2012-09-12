@@ -21,7 +21,8 @@ class Collection(object):
 
     def getLast10(self):
         """ Finds last items created at the collection."""
-        # TODO 10 must be a config parameter, and the function getLastInserted(self, limit)
+        # TODO 10 must be a config parameter, and the function
+        #  getLastInserted(self, limit)
         return self.db.getLast(10)
 
     def get(self, id):
@@ -51,16 +52,18 @@ class Collection(object):
             return
 
         fields = self.schema.fields
+        man = CollectionManager.getInstance()
         for fieldId in fields:
             field = fields[fieldId]
             if field['class'] == 'ref':
                 config = field['params']['ref'].split('.')
-                # TODO how to control if the references of the item aren't yet loaded
+                # TODO how to control if the references of the item aren't
+                #  yet loaded
                 if len(config) == 2:
-                    refCollection = CollectionManager.getInstance().getCollection(config[0])
+                    refCollection = man.getCollection(config[0])
                     refAttr = config[1]
-                    #TODO warning when ref[0] is difrent a refCollection.name, the schema was updated
-                    # but not the db
+                    #TODO warning when ref[0] is difrent a refCollection.name,
+                    #  the schema was updated but not the db
                     if 'multiple' not in field:
                         ref = item[fieldId].split(':')
                         refItem = refCollection.get(ref[1])
@@ -87,14 +90,25 @@ class CollectionManager():
         # TODO autoload collections
         schemas = mocks.collections['boardgames']['schemas']
         conf_pers = mocks.collections['boardgames']['persistence']
-        persitence = PersistenceManager.getInstance().getStorage('boardgames', conf_pers['storage'], conf_pers['parameters'])
-        self.collections['boardgames'] = Collection('boardgames',
+        persitence = PersistenceManager.getInstance().getStorage(
+            'boardgames',
+            conf_pers['storage'],
+            conf_pers['parameters']
+        )
+        self.collections['boardgames'] = Collection(
+            'boardgames',
             Schema(schemas['boardgames']),
             persitence
-            )
-        persistence = PersistenceManager.getInstance().getStorage('people', conf_pers['storage'], conf_pers['parameters'])
-        self.collections['people'] = Collection('people',
-                Schema(schemas['people']), persistence)
+        )
+        persistence = PersistenceManager.getInstance().getStorage(
+            'people',
+            conf_pers['storage'],
+            conf_pers['parameters']
+        )
+        self.collections['people'] = Collection(
+            'people',
+            Schema(schemas['people']),
+            persistence)
 
     def getCollection(self, collectionName):
         return self.collections[collectionName]

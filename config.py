@@ -32,8 +32,9 @@ class Config(object):
         # determine if application is a script file or frozen exe
         application_path = ''
         if getattr(sys, 'frozen', False):
-            application_path = os.path.dirname(sys.executable).replace('MacOS',
-                 'Resources')
+            application_path = os.path.dirname(sys.executable).replace(
+                'MacOS',
+                'Resources')
         else:
             application_path = self.__file__.replace('engine', '')
         return application_path
@@ -55,10 +56,10 @@ class Config(object):
             config_dir = os.path.join(config_dir, 'Collector')
         elif ISOSX:
             config_dir = os.path.expanduser(
-                    '~/Library/Application Support/Collector')
+                '~/Library/Application Support/Collector')
         else:
             bdir = os.path.abspath(os.path.expanduser(
-                    os.environ.get('XDG_CONFIG_HOME', '~/.config')))
+                os.environ.get('XDG_CONFIG_HOME', '~/.config')))
             config_dir = os.path.join(bdir, 'collector')
             try:
                 os.makedirs(config_dir, mode=CONFIG_DIR_MODE)

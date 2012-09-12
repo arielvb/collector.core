@@ -52,7 +52,8 @@ class Field():
         is_list = isinstance(value, list)
         is_dict = isinstance(value, dict)
         if not self.singleValue and not is_list:
-            raise Exception("Field is multivalue and the new value isn't not a list")
+            raise (
+                Exception("List expected"))
         # TODO how to check value is a basic type?
         elif self.singleValue and is_list or is_dict:
             raise Exception("Field is not multivalue and the value is a list")
@@ -124,10 +125,13 @@ class FieldRef(Field):
         return len(parts) == 2
 
 
-class FieldLoader():
+class FieldManager():
 
     def __init__(self):
-        self.fields = {'text': FieldText}
+        self.fields = {'text': FieldText, 'ref': FieldRef}
+
+    def addField(self, fieldClass, fieldClassObject):
+        self.fields[fieldClass] = fieldClassObject
 
     def getField(self, config):
         if config['class'] in self.fields:

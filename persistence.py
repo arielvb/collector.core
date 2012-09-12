@@ -42,7 +42,8 @@ class PersistenceDict(Persistence):
 
     def getLast(self, count):
         """Returns the last items created, the number of items
-         are defined with the count parameter, the items are orderded by last inserted"""
+         are defined with the count parameter, the items are orderded
+         by last inserted"""
         result = self.items[-count:]
         # Reverse the count
         result.reverse()
@@ -84,7 +85,8 @@ _counter = 0
 
 
 class PersistenceManager(object):
-    """PersistenceManager loads the correct persistence form the input parameters"""
+    """PersistenceManager loads the correct persistence form the input
+     parameters"""
 
     def __init__(self):
         global _counter

@@ -91,4 +91,3 @@ counter = 0
 #         return _schemaManagerInstance
 
 # _schemaManagerInstance = SchemaManager()
-

@@ -34,7 +34,8 @@ class PluginManager():
     def look_for_plugins(self):
         # TODO
         import glob
-        print glob.glob('/Users/arkow/universidad/pfc/app/data/user_plugins/*.py')
+        path = '/Users/arkow/universidad/pfc/app/data/user_plugins/*.py'
+        print glob.glob(path)
 
     def get(self, name):
         return self.receipes[name]
