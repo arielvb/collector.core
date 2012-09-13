@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #TODO redo all the class, we need to use sqlite3, or sqlalchemy
-
+from copy import deepcopy
 
 class Persistence(object):
     """Abstract class for Persitence"""
@@ -47,7 +47,7 @@ class PersistenceDict(Persistence):
         result = self.items[-count:]
         # Reverse the count
         result.reverse()
-        return result
+        return deepcopy(result)
 
     def get(self, _id):
         # TODO validate id is integer
@@ -55,11 +55,11 @@ class PersistenceDict(Persistence):
             _id = int(_id)
         for a in self.items:
             if _id == a['id']:
-                return a
+                return deepcopy(a)
         return None
 
     def getAll(self, startAt, limit):
-        return self.items
+        return deepcopy(self.items)
 
     def search(self, term):
         results = []
@@ -67,7 +67,7 @@ class PersistenceDict(Persistence):
         for item in self.items:
             if item['name'].lower().find(term) != -1:
                 results.append(item)
-        return results
+        return deepcopy(results)
 
     def save(self, item):
         #TODO !
