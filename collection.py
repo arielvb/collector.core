@@ -19,10 +19,9 @@ class Collection(object):
     def getName(self):
         return self.schema.name
 
-    def getLast10(self):
+    def getLast(self, limit=10):
         """ Finds last items created at the collection."""
-        # TODO 10 must be a config parameter, and the function getLastInserted(self, limit)
-        return self.db.getLast(10)
+        return self.db.getLast(limit)
 
     def get(self, id):
         return self.db.get(id)
@@ -83,7 +82,7 @@ class CollectionManager():
         counter += 1
         if counter > 1:
             raise Exception('Called more than once')
-        self._config = Config()
+        self._config = Config(True)
         # TODO autoload collections
         schemas = mocks.collections['boardgames']['schemas']
         conf_pers = mocks.collections['boardgames']['persistence']

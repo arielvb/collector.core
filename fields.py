@@ -2,7 +2,7 @@
 from collection import CollectionManager
 
 
-class Field():
+class Field(object):
 
     _class = ''
     name = ''
@@ -61,10 +61,32 @@ class Field():
     def getValue(self):
         return self.value
 
+    def __str__(self):
+        # TODO finish and test
+        value = ''
+        if not self.value is None:
+            value = self.value
+        return self.name + ': ' + str(value)
+
 
 class FieldText(Field):
 
     _class = 'text'
+
+
+class FieldInt(Field):
+    """Custom Field where the value's are int"""
+    _class = 'int'
+
+    def setValue(self, value):
+        super(FieldInt, self).setValue(int(value))
+
+    def addValue(self, values):
+        int_list = []
+        for item in values:
+            int_list.append(int(item))
+        super(FieldInt, self).setValue(int_list)
+        pass
 
 
 class FieldImage(Field):
@@ -124,25 +146,39 @@ class FieldRef(Field):
         return len(parts) == 2
 
 
-class FieldLoader():
+class FieldClassNotFound(Exception):
+    """Raises when a non registered class is requested using *FieldManager*"""
+
+_fieldManagerInstance = None
+
+
+class FieldManager():
 
     def __init__(self):
-        self.fields = {'text': FieldText}
+        global _fieldManagerInstance
+        if _fieldManagerInstance is not None:
+            raise Exception("Called more that once")
+        _fieldManagerInstance = self
+        self.fields = {'text': FieldText, 'int': FieldInt}
 
-    def getField(self, config):
+    @staticmethod
+    def getInstance():
+        global _fieldManagerInstance
+        if _fieldManagerInstance is None:
+            _fieldManagerInstance = FieldManager()
+        return _fieldManagerInstance
+
+    def get(self, config):
         if config['class'] in self.fields:
-            field = self.fields[config['class']]
+            field_class = self.fields[config['class']]
         else:
             # TODO custom exception
-            raise Exception('Field class not found')
-        error = False
-        if 'name' not in field:
-            error = True
-        if field['class'] == 'text':
-            return not error
-        elif field['class'] == 'int':
-            return not error
-        elif field['class'] == 'ref':
-            return (Field._validate_ref(field) and not error)
-        elif field['class'] == 'image':
-            return Field._validate_image(field)
+            raise FieldClassNotFound('Field class ' + config['class'] +
+                ' not found.')
+        multivalue = False
+        params = None
+        if 'multiple' in config:
+            multivalue = config['multiple']
+        if 'params' in config:
+            params = config['params']
+        return field_class(config['name'], multivalue, params)

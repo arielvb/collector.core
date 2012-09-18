@@ -84,7 +84,8 @@ _counter = 0
 
 
 class PersistenceManager(object):
-    """PersistenceManager loads the correct persistence form the input parameters"""
+    """PersistenceManager loads the correct persistence form the input
+     parameters"""
 
     def __init__(self):
         global _counter
