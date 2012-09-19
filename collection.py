@@ -82,16 +82,16 @@ class CollectionManager():
         counter += 1
         if counter > 1:
             raise Exception('Called more than once')
-        self._config = Config(True)
+        self._config = Config.getInstance(True)
         # TODO autoload collections
-        schemas = mocks.collections['boardgames']['schemas']
-        conf_pers = mocks.collections['boardgames']['persistence']
-        persitence = PersistenceManager.getInstance().getStorage('boardgames', conf_pers['storage'], conf_pers['parameters'])
+        schemas = mocks.collections['demo']['schemas']
+        conf_pers = mocks.collections['demo']['persistence']
+        persitence = PersistenceManager.getInstance().getStorage('demo', 'boardgames', conf_pers['storage'])
         self.collections['boardgames'] = Collection('boardgames',
             Schema(schemas['boardgames']),
             persitence
             )
-        persistence = PersistenceManager.getInstance().getStorage('people', conf_pers['storage'], conf_pers['parameters'])
+        persistence = PersistenceManager.getInstance().getStorage('demo', 'people', conf_pers['storage'])
         self.collections['people'] = Collection('people',
                 Schema(schemas['people']), persistence)
 

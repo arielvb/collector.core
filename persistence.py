@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 #TODO redo all the class, we need to use sqlite3, or sqlalchemy
+import os
+from config import Config
+import pickle
 
 
 class Persistence(object):
@@ -30,19 +33,44 @@ class PersistenceDict(Persistence):
     """Implementation of persistence using a python dictionary"""
 
     _autoid = 1
+    FILE_EXTENSION = '.p'
+    CONFIG_DIR_MODE = 0700
+    path = None
 
-    def __init__(self, collectionName, params={}):
+    def __init__(self, collectionName, subcollection, params={}, data=None):
         super(PersistenceDict, self).__init__(params)
         # Obtain items from the params
-        self.items = params[collectionName]
+        #self.items = params[collectionName]
+
+        # Create collection folder
+        # TODO this must go inside collection
+        apppath = Config.getInstance().get_appdata_path()
+        path = os.path.join(apppath, 'collections', collectionName)
+        if not os.path.exists(path):
+            os.makedirs(path, self.CONFIG_DIR_MODE)
+        self.items = []
+        if data is None:
+            pickle_file = os.path.join(path, subcollection +
+                                       self.FILE_EXTENSION)
+            if os.path.exists(pickle_file):
+                f = open(pickle_file)
+                self.items = pickle.load(f)
+                f.close()
+            self.path = pickle_file
+        else:
+            self.items = data
+
+        self._calc_autoid()
+
+    def _calc_autoid(self):
         maxid = 0
         for i in self.items:
             maxid = max(maxid, i['id'])
         self._autoid = maxid + 1
 
     def getLast(self, count):
-        """Returns the last items created, the number of items
-         are defined with the count parameter, the items are orderded by last inserted"""
+        """Returns the last items created, the number of items are defined
+         with the count parameter, the items are orderded by last inserted"""
         result = self.items[-count:]
         # Reverse the count
         result.reverse()
@@ -78,6 +106,10 @@ class PersistenceDict(Persistence):
             item['id'] = self._autoid
             self._autoid += 1
             self.items.append(item)
+        if not self.path is None:
+            f = open(self.path, 'wb')
+            pickle.dump(self.items, f)
+            f.close()
 
 
 _counter = 0
@@ -95,12 +127,12 @@ class PersistenceManager(object):
 
         super(PersistenceManager, self).__init__()
         self.storageEngine = {
-            'dict': PersistenceDict
+            'pickle': PersistenceDict
         }
 
-    def getStorage(self, collectionName, storage, params):
+    def getStorage(self, collectionName, subcollection, storage, params={}):
         # TODO add storage cache
-        return self.storageEngine[storage](collectionName, params)
+        return self.storageEngine[storage](collectionName, subcollection, params)
 
     @staticmethod
     def getInstance():
