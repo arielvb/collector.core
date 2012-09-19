@@ -25,17 +25,30 @@ def rebuild_constants():
 
     FILEPATH = os.path.dirname(__file__)
 
+_config_instance = None
+
 
 class Config(object):
     """Config allows consult the application paths and other settings"""
 
     def __init__(self, create_directory=False):
         """ Constructor for Config, initialize all the attributes"""
+        global _config_instance
+        if not _config_instance is None:
+            raise Exception("Called more that once")
         self.config_dir = None
         self.__file__ = FILEPATH
         self.create_config_directory(create_directory)
         self.resources = self.get_resources_path()
+        _config_instance = self
         #os.read(os.path.join(self.path, 'resources/config/ui.json'))
+
+    @staticmethod
+    def getInstance(create_directory=False):
+        global _config_instance
+        if _config_instance is None:
+            _config_instance = Config(create_directory)
+        return _config_instance
 
     def get_resources_path(self):
         """Returns the resources path, in MacOs is the folder Resources
