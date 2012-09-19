@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from abc import *
 from provider import UrlProvider
+import glob
+import os
+import sys
 
 
 class Plugin(object):
@@ -38,7 +41,8 @@ class PluginCollector(Plugin):
         self.provider = provider
 
     def search(self, query):
-        self.results = self.provider.get(query)
+        html = self.provider.get(query)
+        return self.search_filter(html)
 
     def get(self, uri):
         pass
@@ -50,11 +54,6 @@ class PluginCollector(Plugin):
     @abstractmethod
     def attr_filter(self, html):
         pass
-
-
-import glob
-import os
-import sys
 
 
 class PluginManager(object):
