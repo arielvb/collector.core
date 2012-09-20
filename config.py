@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# pylint: disable-msg=W0603
+# W0603: Using the global statement
 """
 Config Class
 """
@@ -16,6 +18,7 @@ FILEPATH = os.path.dirname(__file__)
 
 
 def rebuild_constants():
+    """Returns constants to the default value"""
     global CONFIG_DIR_MODE, PLAT, ISWINDOWS, ISOSX, FILEPATH
     CONFIG_DIR_MODE = 0700
     PLAT = sys.platform.lower()
@@ -25,29 +28,27 @@ def rebuild_constants():
 
     FILEPATH = os.path.dirname(__file__)
 
-_config_instance = None
-
 
 class Config(object):
     """Config allows consult the application paths and other settings"""
 
+    _instance = None
+
     def __init__(self):
         """ Constructor for Config, initialize all the attributes"""
-        global _config_instance
-        if not _config_instance is None:
+        if not Config._instance is None:
             raise Exception("Called more that once")
         self.__file__ = FILEPATH
         self.config_dir = Config.calculate_data_path()
         self.resources = self.get_resources_path()
-        _config_instance = self
         #os.read(os.path.join(self.path, 'resources/config/ui.json'))
 
     @staticmethod
-    def getInstance():
-        global _config_instance
-        if _config_instance is None:
-            _config_instance = Config()
-        return _config_instance
+    def get_instance():
+        """Returns the config instance"""
+        if Config._instance is None:
+            Config._instance = Config()
+        return Config._instance
 
     def get_resources_path(self):
         """Returns the resources path, in MacOs is the folder Resources

@@ -55,7 +55,7 @@ class Collection(object):
             return
 
         fields = self.schema.fields
-        collections = CollectionManager.getInstance()
+        collections = CollectionManager.get_instance()
         for fieldId in fields:
             field = fields[fieldId]
             if field['class'] == 'ref':
@@ -97,7 +97,7 @@ class CollectionManager():
         self.author = ''
         if _collectionManagerInstance is not None:
             raise Exception('Called more than once')
-        self._config = Config.getInstance()
+        self._config = Config.get_instance()
         path = os.path.join(self._config.get_data_path(), 'collections')
         self.collections = self.discover_collections(path)
 
@@ -109,7 +109,7 @@ class CollectionManager():
         except Exception:
             #TODO log this!
             pass
-        pers_man = PersistenceManager.getInstance()
+        pers_man = PersistenceManager.get_instance()
         for item in allfiles:
             c_path = os.path.join(path, item)
             if CollectionManager.is_collection_folder(c_path):
@@ -137,12 +137,12 @@ class CollectionManager():
 
         # schemas = mocks.collections['demo']['schemas']
         # conf_pers = mocks.collections['demo']['persistence']
-        # persitence = PersistenceManager.getInstance().getStorage('demo', 'boardgames', conf_pers['storage'])
+        # persitence = PersistenceManager.get_instance().getStorage('demo', 'boardgames', conf_pers['storage'])
         # self.collections['boardgames'] = Collection('boardgames',
         #     Schema(schemas['boardgames']),
         #     persitence
         #     )
-        # persistence = PersistenceManager.getInstance().getStorage('demo', 'people', conf_pers['storage'])
+        # persistence = PersistenceManager.get_instance().getStorage('demo', 'people', conf_pers['storage'])
         # self.collections['people'] = Collection('people',
         #         Schema(schemas['people']), persistence)
         pass
@@ -170,7 +170,7 @@ class CollectionManager():
         return os.path.isdir(item)
 
     @staticmethod
-    def getInstance():
+    def get_instance():
         global _collectionManagerInstance
         if _collectionManagerInstance is None:
             _collectionManagerInstance = CollectionManager()

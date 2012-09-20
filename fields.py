@@ -129,7 +129,7 @@ class FieldRef(Field):
             parts = self.value.split(':')
 
             if self._validateParts(parts):
-                man = CollectionManager.getInstance()
+                man = CollectionManager.get_instance()
                 col = man.getCollection(parts[0])
                 self.full = col.get(parts[1])
                 self.full
@@ -162,7 +162,7 @@ class FieldManager():
         self.fields = {'text': FieldText, 'int': FieldInt}
 
     @staticmethod
-    def getInstance():
+    def get_instance():
         global _fieldManagerInstance
         if _fieldManagerInstance is None:
             _fieldManagerInstance = FieldManager()

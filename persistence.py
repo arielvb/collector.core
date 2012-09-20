@@ -44,7 +44,7 @@ class PersistenceDict(Persistence):
 
         # Create collection folder
         # TODO this must go inside collection
-        apppath = Config.getInstance().get_data_path()
+        apppath = Config.get_instance().get_data_path()
         path = os.path.join(apppath, 'collections', collectionName)
         if not os.path.exists(path):
             os.makedirs(path, self.CONFIG_DIR_MODE)
@@ -143,7 +143,7 @@ class PersistenceManager(object):
         return self.storageEngine[storage](collectionName, subcollection, params)
 
     @staticmethod
-    def getInstance():
+    def get_instance():
         if PersistenceManager._instance is None:
             PersistenceManager._instance = PersistenceManager()
         return PersistenceManager._instance

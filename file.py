@@ -36,7 +36,7 @@ class File(object):
         # TODO refractor _load_fields_from_dict and the code above to the
         #  class Schema
         # Create empty fields
-        man = FieldManager.getInstance()
+        man = FieldManager.get_instance()
         for field in schema.fields:
             if not field in self.fields:
                 self.fields[field] = man.get(schema.fields[field])
@@ -46,7 +46,7 @@ class File(object):
         """ Trasnlates the *dictvalues* of basic types using the schema of
         the *collection* into *Field* objects"""
         fields = {}
-        man = FieldManager.getInstance()
+        man = FieldManager.get_instance()
         for field in schema.fields:
             fields[field] = man.get(schema.fields[field])
             if field in dictvalues:
