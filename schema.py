@@ -41,7 +41,7 @@ class Schema(object):
         if 'default' in config:
             self.default = config['default']
         else:
-            self.default = self.fields[0]
+            self.default = self.order[0]
         if 'ico' in config:
             self.ico = config['ico']
         if 'image' in config:

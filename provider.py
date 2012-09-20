@@ -1,7 +1,7 @@
 import urllib2
 import urllib
 
-TIMEOUT = 10
+TIMEOUT = 60
 
 
 class Provider():
@@ -26,7 +26,7 @@ class UrlProvider(Provider):
         if (param):
             param = urllib.quote_plus(param)
             query = query % param
-        return urllib2.urlopen(query, TIMEOUT).read()
+        return urllib2.urlopen(query, timeout=TIMEOUT).read()
 
 
 class FileProvider(Provider):
