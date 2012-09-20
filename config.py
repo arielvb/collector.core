@@ -31,23 +31,22 @@ _config_instance = None
 class Config(object):
     """Config allows consult the application paths and other settings"""
 
-    def __init__(self, create_directory=False):
+    def __init__(self):
         """ Constructor for Config, initialize all the attributes"""
         global _config_instance
         if not _config_instance is None:
             raise Exception("Called more that once")
-        self.config_dir = None
         self.__file__ = FILEPATH
-        self.create_config_directory(create_directory)
+        self.config_dir = Config.calculate_data_path()
         self.resources = self.get_resources_path()
         _config_instance = self
         #os.read(os.path.join(self.path, 'resources/config/ui.json'))
 
     @staticmethod
-    def getInstance(create_directory=False):
+    def getInstance():
         global _config_instance
         if _config_instance is None:
-            _config_instance = Config(create_directory)
+            _config_instance = Config()
         return _config_instance
 
     def get_resources_path(self):
@@ -65,11 +64,21 @@ class Config(object):
         return os.path.abspath(application_path)
 
     def get_appdata_path(self):
-        """ Returns the app data folder """
+        """Returns the app data folder, this folder is inside the
+         application"""
         return os.path.join(self.resources, 'data')
 
-    def create_config_directory(self, create):
-        """ Creates the config directory inside the user folder,
+    def get_data_path(self):
+        """Returns the user data path"""
+        return self.config_dir
+
+    def get_plugin_path(self):
+        """Returns the user plugin path"""
+        return os.path.join(self.config_dir, 'plugins')
+
+    @staticmethod
+    def calculate_data_path():
+        """ Calculates the user data directory,
          the exact location depends of the OS"""
         config_dir = None
         if ISWINDOWS:
@@ -84,13 +93,20 @@ class Config(object):
             bdir = os.path.abspath(os.path.expanduser(
                     os.environ.get('XDG_CONFIG_HOME', '~/.config')))
             config_dir = os.path.join(bdir, 'collector')
-            try:
-                if create:
-                    os.makedirs(config_dir, mode=CONFIG_DIR_MODE)
-            except:
-                pass
-        plugin_dir = os.path.join(config_dir, 'plugins')
+        return config_dir
 
-        if not os.path.exists(plugin_dir) and create:
-            os.makedirs(plugin_dir, mode=CONFIG_DIR_MODE)
-        self.config_dir = config_dir
+    def build_data_directory(self):
+        """Creates the content inside the user data directory"""
+        subfolders = ['user_plugins', 'config', 'collections']
+        import shutil
+        base = self.config_dir
+        if not os.path.exists(base):
+            os.makedirs(base, mode=CONFIG_DIR_MODE)
+            appdata = self.get_appdata_path()
+            # Do a full copy because no previus data exists
+            for folder in subfolders:
+                dst = os.path.join(base, folder)
+                src = os.path.join(appdata, folder)
+                shutil.copytree(src, dst)
+        # TODO check if some data is missing?
+
