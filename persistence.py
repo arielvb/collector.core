@@ -5,6 +5,7 @@ import os
 from config import Config
 import pickle
 from abc import ABCMeta, abstractmethod
+import copy
 
 
 class Persistence(object):
@@ -95,7 +96,7 @@ class PersistenceDict(Persistence):
             _id = int(_id)
         for item in self.items:
             if _id == item['id']:
-                return item
+                return copy.deepcopy(item)
         return None
 
     def get_all(self, start_at, limit):
@@ -106,7 +107,7 @@ class PersistenceDict(Persistence):
         term = term.lower()
         for item in self.items:
             if item['name'].lower().find(term) != -1:
-                results.append(item)
+                results.append(copy.deepcopy(item))
         return results
 
     def save(self, values):
