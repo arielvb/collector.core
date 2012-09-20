@@ -44,7 +44,7 @@ class PersistenceDict(Persistence):
 
         # Create collection folder
         # TODO this must go inside collection
-        apppath = Config.getInstance().get_appdata_path()
+        apppath = Config.getInstance().get_data_path()
         path = os.path.join(apppath, 'collections', collectionName)
         if not os.path.exists(path):
             os.makedirs(path, self.CONFIG_DIR_MODE)
@@ -96,34 +96,42 @@ class PersistenceDict(Persistence):
                 results.append(item)
         return results
 
-    def save(self, item):
+    def save(self, values):
         #TODO !
-        if 'id' in item:
-            for a in self.items:
-                if item['id'] == a['id']:
-                    a.update(item)
+        if 'id' in values:
+            for item in self.items:
+                if values['id'] == item['id']:
+                    item.update(values)
         else:
-            item['id'] = self._autoid
+            values['id'] = self._autoid
             self._autoid += 1
-            self.items.append(item)
+            self.items.append(values)
+        self.commit()
+
+    def delete(self, id):
+        for item in self.items:
+            if item['id'] == id:
+                self.items.remove(item)
+        self.commit()
+
+    def commit(self):
+        """Stores the changes"""
+        # Store with pickle
         if not self.path is None:
             f = open(self.path, 'wb')
             pickle.dump(self.items, f)
             f.close()
 
 
-_counter = 0
-
-
 class PersistenceManager(object):
     """PersistenceManager loads the correct persistence form the input
      parameters"""
 
+    _instance = None
+
     def __init__(self):
-        global _counter
-        if _counter > 0:
+        if not PersistenceManager._instance is None:
             raise Exception('Called more that once')
-        _counter = 1
 
         super(PersistenceManager, self).__init__()
         self.storageEngine = {
@@ -136,8 +144,8 @@ class PersistenceManager(object):
 
     @staticmethod
     def getInstance():
-        global _managerInstace
-        return _managerInstace
+        if PersistenceManager._instance is None:
+            PersistenceManager._instance = PersistenceManager()
+        return PersistenceManager._instance
 
 
-_managerInstace = PersistenceManager()

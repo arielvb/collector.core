@@ -2,7 +2,6 @@
 from persistence import PersistenceManager
 from schema import Schema
 from config import Config
-from tests import mocks
 #from schema import SchemaManager
 
 counter = 0
@@ -18,6 +17,9 @@ class Collection(object):
 
     def getName(self):
         return self.schema.name
+
+    def get_image(self):
+        return self.schema.image
 
     def getLast(self, limit=10):
         """ Finds last items created at the collection."""
@@ -39,6 +41,9 @@ class Collection(object):
     def save(self, obj):
         return self.db.save(obj)
 
+    def delete(self, obj):
+        return self.db.delete(obj)
+
     def getConfig(self):
         # TODO refractor to collector
         return self._config
@@ -50,27 +55,35 @@ class Collection(object):
             return
 
         fields = self.schema.fields
+        collections = CollectionManager.getInstance()
         for fieldId in fields:
             field = fields[fieldId]
             if field['class'] == 'ref':
                 config = field['params']['ref'].split('.')
                 # TODO how to control if the references of the item aren't yet loaded
                 if len(config) == 2:
-                    refCollection = CollectionManager.getInstance().getCollection(config[0])
+                    refCollection = collections.getCollection(config[0])
                     refAttr = config[1]
                     #TODO warning when ref[0] is difrent a refCollection.name, the schema was updated
                     # but not the db
                     if 'multiple' not in field:
                         ref = item[fieldId].split(':')
-                        refItem = refCollection.get(ref[1])
-                        item[fieldId] = refItem[refAttr]
+                        if (len(ref) == 2):
+                            refItem = refCollection.get(ref[1])
+                            item[fieldId] = refItem[refAttr]
                     else:
                         _list = item[fieldId]
                         for i in range(0, len(_list)):
-                            ref = _list[i].split(':')
-                            refItem = refCollection.get(ref[1])
-                            _list[i] = refItem[refAttr]
+                            if _list[i] != '':
+                                ref = _list[i].split(':')
+                                refItem = refCollection.get(ref[1])
+                                _list[i] = refItem[refAttr]
         item['refLoaded'] = True
+
+import os
+import json
+
+_collectionManagerInstance = None
 
 
 class CollectionManager():
@@ -78,22 +91,73 @@ class CollectionManager():
     collections = {}
 
     def __init__(self):
-        global counter
-        counter += 1
-        if counter > 1:
+        self.persistence = ''
+        self.name = ''
+        self.title = ''
+        self.author = ''
+        if _collectionManagerInstance is not None:
             raise Exception('Called more than once')
-        self._config = Config.getInstance(True)
-        # TODO autoload collections
-        schemas = mocks.collections['demo']['schemas']
-        conf_pers = mocks.collections['demo']['persistence']
-        persitence = PersistenceManager.getInstance().getStorage('demo', 'boardgames', conf_pers['storage'])
-        self.collections['boardgames'] = Collection('boardgames',
-            Schema(schemas['boardgames']),
-            persitence
-            )
-        persistence = PersistenceManager.getInstance().getStorage('demo', 'people', conf_pers['storage'])
-        self.collections['people'] = Collection('people',
-                Schema(schemas['people']), persistence)
+        self._config = Config.getInstance()
+        path = os.path.join(self._config.get_data_path(), 'collections')
+        self.collections = self.discover_collections(path)
+
+    def discover_collections(self, path):
+        allfiles = []
+        collections = {}
+        try:
+            allfiles = os.listdir(path)
+        except Exception:
+            #TODO log this!
+            pass
+        pers_man = PersistenceManager.getInstance()
+        for item in allfiles:
+            c_path = os.path.join(path, item)
+            if CollectionManager.is_collection_folder(c_path):
+                # try:
+                file = open(os.path.join(c_path, item + ".json"))
+                raw = json.load(file)
+                persistence = raw['persistence']
+                self.author = raw['author']
+                self.title = raw['name']
+                self.description = raw['description']
+                self.persistence = persistence['storage']
+                schemas = raw['schemas']
+                for schema in schemas:
+                    storage = pers_man.getStorage(item, schema,
+                                                  persistence['storage'])
+                    collection = Collection(
+                        schema,
+                        Schema(schemas[schema]),
+                        storage)
+                    collections[schema] = collection
+                #TODO load more than one
+                return collections
+                # except Exception:
+                #     pass
+
+        # schemas = mocks.collections['demo']['schemas']
+        # conf_pers = mocks.collections['demo']['persistence']
+        # persitence = PersistenceManager.getInstance().getStorage('demo', 'boardgames', conf_pers['storage'])
+        # self.collections['boardgames'] = Collection('boardgames',
+        #     Schema(schemas['boardgames']),
+        #     persitence
+        #     )
+        # persistence = PersistenceManager.getInstance().getStorage('demo', 'people', conf_pers['storage'])
+        # self.collections['people'] = Collection('people',
+        #         Schema(schemas['people']), persistence)
+        pass
+
+    def get_author(self):
+        return self.author
+
+    def get_title(self):
+        return self.title
+
+    def get_persistence(self):
+        return self.persistence
+
+    def get_description(self):
+        return self.description
 
     def getCollection(self, collectionName):
         return self.collections[collectionName]
@@ -102,8 +166,12 @@ class CollectionManager():
         return self._config
 
     @staticmethod
-    def getInstance():
-        global collectionManagerInstance
-        return collectionManagerInstance
+    def is_collection_folder(item):
+        return os.path.isdir(item)
 
-collectionManagerInstance = CollectionManager()
+    @staticmethod
+    def getInstance():
+        global _collectionManagerInstance
+        if _collectionManagerInstance is None:
+            _collectionManagerInstance = CollectionManager()
+        return _collectionManagerInstance
