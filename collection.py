@@ -23,17 +23,17 @@ class Collection(object):
 
     def getLast(self, limit=10):
         """ Finds last items created at the collection."""
-        return self.db.getLast(limit)
+        return self.db.get_last(limit)
 
     def get(self, id):
         return self.db.get(id)
 
-    def getAll(self, startAt=0, limit=0):
+    def get_all(self, startAt=0, limit=0):
         """ Finds all the items, optinally results could be called
             using startAt and limit, useful for pagination.
         """
         # TODO validate startAt and limit are integers
-        return self.db.getAll(startAt, limit)
+        return self.db.get_all(startAt, limit)
 
     def query(self, term):
         return self.db.search(term)
