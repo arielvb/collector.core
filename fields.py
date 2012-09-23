@@ -10,10 +10,16 @@ class Field(object):
     singleValue = True
     value = None
 
-    def __init__(self, name, multiple=False, params=None):
+    def __init__(self, name, multiple=False, params=None, value=None):
         if multiple:
             self.singleValue = False
-            self.value = []
+            if value is None:
+                self.value = []
+            else:
+                self.value = value
+        else:
+            self.value = value
+
         self.name = name
         self._params = params
 
@@ -89,9 +95,22 @@ class FieldInt(Field):
         pass
 
 
+from urlparse import urlparse
+import os
+from config import Config
+
+
 class FieldImage(Field):
 
     _class = 'image'
+
+    def getValue(self):
+        image = self.value
+        uri = urlparse(self.value)
+        if uri.scheme == 'collector' and uri.netloc == 'collections':
+            image = os.path.join(Config.get_instance().get_data_path(),
+                                 uri.netloc, uri.path[1:])
+        return image
 
     def getPath(self):
         """ Alias for self.getValue """
