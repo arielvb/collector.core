@@ -33,13 +33,21 @@ class Config(object):
     """Config allows consult the application paths and other settings"""
 
     _instance = None
+    OSX = 1
+    WINDOWS = 2
+    OTHER = 3
 
-    def __init__(self):
+    def __init__(self, platform=None):
         """ Constructor for Config, initialize all the attributes"""
         if not Config._instance is None:
             raise Exception("Called more that once")
         self.__file__ = FILEPATH
-        self.config_dir = Config.calculate_data_path()
+        if platform is None:
+            platform = Config.get_current_os()
+        elif platform not in [Config.OSX, Config.WINDOWS, Config.OTHER]:
+            raise Exception("Platform identifier %s not found" % platform)
+        self.platform = platform
+        self.config_dir = Config.calculate_data_path(platform)
         self.resources = self.get_resources_path()
         #os.read(os.path.join(self.path, 'resources/config/ui.json'))
 
@@ -57,7 +65,7 @@ class Config(object):
         application_path = ''
         if getattr(sys, 'frozen', False):
             application_path = os.path.dirname(sys.executable)
-            if ISOSX:
+            if self.platform == Config.OSX:
                 application_path = application_path.replace('MacOS',
                  'Resources')
         else:
@@ -78,16 +86,31 @@ class Config(object):
         return os.path.join(self.config_dir, 'plugins')
 
     @staticmethod
-    def calculate_data_path():
+    def get_current_os(platform=None):
+        """Try to discover the current OS"""
+        if platform is None:
+            platform = sys.platform
+        platform = platform.lower()
+        if platform in 'win32' or platform in 'win64':
+            return Config.WINDOWS
+        elif platform in 'darwin':
+            return Config.OSX
+        else:
+            return Config.OTHER
+
+    @staticmethod
+    def calculate_data_path(platform=None):
         """ Calculates the user data directory,
          the exact location depends of the OS"""
         config_dir = None
-        if ISWINDOWS:
+        if platform is None:
+            platform = Config.get_current_os()
+        if platform == Config.WINDOWS:
             # TODO try to use distutils get_special_folder_path
             #config_dir = get_special_folder_path("CSIDL_APPDATA")
             config_dir = os.path.expanduser('~')
             config_dir = os.path.join(config_dir, 'Collector')
-        elif ISOSX:
+        elif platform == Config.OSX:
             config_dir = os.path.expanduser(
                     '~/Library/Application Support/Collector')
         else:
