@@ -2,9 +2,6 @@
 from persistence import PersistenceManager
 from schema import Schema
 from config import Config
-#from schema import SchemaManager
-
-counter = 0
 
 
 class Collection(object):
