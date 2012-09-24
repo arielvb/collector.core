@@ -6,6 +6,7 @@ from provider import UrlProvider
 import glob
 import os
 import sys
+import logging
 
 
 class Plugin(object):
@@ -80,37 +81,53 @@ class PluginCollector(Plugin):
 class PluginManager(object):
     """Manager for the plugin system"""
 
+    _instance = None
+
     def __init__(self, enabled=None, plugins=None, paths=None):
         """PluginManager manages the avaible, enable/disable and discover
          plugins.
-         The arguments of the constructor, all optionals:
+        Don't call directly to the constructor use
+          PluginManager.get_instance()
+        The arguments of the constructor, all optionals:
          *enabled* a list of all the enabled plugins by default
          *plugins* a dictionary of plugins {id: Plugin} that are preloaded
          *paths* a list of paths to look for plugins"""
-        if plugins is None:
-            plugins = {}
-        if enabled is None:
-            enabled = []
-        self.enabled = enabled
-        if paths is None:
-            paths = []
+        if PluginManager._instance is None:
+            if plugins is None:
+                plugins = {}
+            if enabled is None:
+                enabled = []
+            self.enabled = enabled
+            if paths is None:
+                paths = []
 
-        self.paths = []
-        self.plugins = plugins
-        self.look_for_plugins(paths)
+            self.paths = []
+            self.plugins = plugins
+            self.look_for_plugins(paths)
+        else:
+            raise Exception("Called more that once")
+
+    @staticmethod
+    def get_instance(enabled=None, plugins=None, paths=None):
+        """Returns the instance of the plugin manager, it will create one if it
+         doesn't exits"""
+        if PluginManager._instance is None:
+            PluginManager._instance = PluginManager(enabled, plugins, paths)
+        return PluginManager._instance
 
     def look_for_plugins(self, paths):
         """Discovers all the plugins that exists in all the paths received
          as argument"""
-        # TODO check for dubplicates?
-        self.paths.extend(paths)
+        # Append existing non existing paths to self.paths
+        self.paths.extend([path for path in paths if path not in self.paths])
+        # Look for new plugins
         for path in paths:
             f_path = os.path.abspath(path)
             pyfiles = glob.glob(os.path.join(f_path, '*.py'))
             # register pyfile in sys.path
             if len(pyfiles) > 0 and not f_path in sys.path:
                 sys.path.append(f_path)
-            # import Plugin
+            # import the plugin
             for i in pyfiles:
                 module = os.path.basename(i)[:-3]
                 classname = 'Plugin' + module.capitalize()
@@ -119,15 +136,13 @@ class PluginManager(object):
                                   fromlist=[classname])
                 class_definition = getattr(temp, classname)
                 if issubclass(class_definition, Plugin):
-                    # TODO log plugin loaded
+                    logging.info("PluginManager: discovered plugin %s", module)
                     plugin = class_definition()
                     self.register_plugin(plugin)
                     # Autoexecute plugins
                     if (issubclass(class_definition, PluginRunnable) and
                         plugin.get_id() in self.enabled and plugin.autorun()):
                         plugin.run()
-        # from plugins.boardgamegeek import PluginBoardGameGeek
-        #
 
     def get(self, _id):
         """Returns the plugin with identifier _id"""
@@ -143,12 +158,8 @@ class PluginManager(object):
 
     def get_disabled(self):
         """Returns a list with all the disabled plugins"""
-        disabled = []
-        # TODO compression list
-        for i in self.plugins:
-            if i not in self.enabled:
-                disabled.append(i)
-        return disabled
+        return [plugin for plugin in self.plugins
+                if plugin not in self.enabled]
 
     def enable(self, pluginlist):
         """Turns on all the plugins of *pluginlist*, *pluginlist* must be a
