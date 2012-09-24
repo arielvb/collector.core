@@ -119,30 +119,20 @@ class CollectionManager():
                 self.description = raw['description']
                 self.persistence = persistence['storage']
                 schemas = raw['schemas']
-                for schema in schemas:
-                    storage = pers_man.getStorage(item, schema,
-                                                  persistence['storage'])
+                for id_ in schemas:
+                    storage = pers_man.get_storage(item, id_,
+                                                  persistence['storage'],
+                                                  c_path
+                                                  )
                     collection = Collection(
-                        schema,
-                        Schema(schemas[schema]),
+                        id_,
+                        Schema(schemas[id_]),
                         storage)
-                    collections[schema] = collection
+                    collections[id_] = collection
                 #TODO load more than one
                 return collections
                 # except Exception:
                 #     pass
-
-        # schemas = mocks.collections['demo']['schemas']
-        # conf_pers = mocks.collections['demo']['persistence']
-        # persitence = PersistenceManager.get_instance().getStorage('demo', 'boardgames', conf_pers['storage'])
-        # self.collections['boardgames'] = Collection('boardgames',
-        #     Schema(schemas['boardgames']),
-        #     persitence
-        #     )
-        # persistence = PersistenceManager.get_instance().getStorage('demo', 'people', conf_pers['storage'])
-        # self.collections['people'] = Collection('people',
-        #         Schema(schemas['people']), persistence)
-        pass
 
     def get_author(self):
         return self.author

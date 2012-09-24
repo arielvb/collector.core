@@ -13,10 +13,14 @@ class Persistence(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, collection_id, subcollection, params=None, data=None):
+    def __init__(self, collection_id, subcollection, path, params=None):
         super(Persistence, self).__init__()
         if not params is None and not isinstance(params, dict):
             raise Exception('Params are not a dict')
+        self.path = path
+        self.collection_id = collection_id
+        self.subcollection = subcollection
+        self.params = params
 
     @abstractmethod
     def get(self, _id):
@@ -45,35 +49,44 @@ class PersistenceDict(Persistence):
 
     _autoid = 1
     FILE_EXTENSION = '.p'
-    CONFIG_DIR_MODE = 0700
-    path = None
 
-    def __init__(self, collection_id, subcollection, params={}, data=None):
-        super(PersistenceDict,
-              self).__init__(collection_id, subcollection, params, data)
-        # Obtain items from the params
-        #self.items = params[collection_id]
-
-        # Create collection folder
-        # TODO this must go inside collection
-        self.path = None
-        apppath = Config.get_instance().get_data_path()
-        path = os.path.join(apppath, 'collections', collection_id)
-        if not os.path.exists(path):
-            os.makedirs(path, self.CONFIG_DIR_MODE)
+    def __init__(self, collection_id, subcollection, path, params=None):
+        super(PersistenceDict, self).__init__(collection_id,
+         subcollection, path, params)
         self.items = []
-        if data is None:
-            pickle_file = os.path.join(path, subcollection +
+        self.pickle_file = None
+        self.memory = False
+        # configure
+        self.configure()
+        # Create collection folder
+        self._create_path()
+
+    def configure(self):
+        """Configures the storage system"""
+        # Read params
+        if self.params is None:
+            self.params = {}
+        params = self.params
+        self.memory = params.get('memory', False)
+        data = params.get('data', None)
+        if self.path is not None:
+            pickle_file = os.path.join(self.path, self.subcollection +
                                        self.FILE_EXTENSION)
             if os.path.exists(pickle_file):
                 _file = open(pickle_file)
                 self.items = pickle.load(_file)
                 _file.close()
-            self.path = pickle_file
-        else:
+                self.pickle_file = pickle_file
+        elif data is not None:
             self.items = data
 
         self._calc_autoid()
+
+    def _create_path(self):
+        """Creates the path where all the data will be stored"""
+        if not self.memory and self.path is not None:
+            if not os.path.exists(self.path):
+                os.makedirs(self.path, Config.DIR_MODE)
 
     def _calc_autoid(self):
         """Searchs the max id used and set's the new autoid value"""
@@ -100,7 +113,12 @@ class PersistenceDict(Persistence):
         return None
 
     def get_all(self, start_at, limit):
-        return self.items
+        """Returns all the items starting at *start_at*, the results could
+         be limited whit *limit*"""
+        if limit == 0:
+            return self.items[start_at:]
+        else:
+            return self.items[start_at:(start_at + limit)]
 
     def search(self, term):
         results = []
@@ -131,8 +149,8 @@ class PersistenceDict(Persistence):
     def commit(self):
         """Stores the changes"""
         # Store with pickle
-        if not self.path is None:
-            dst = open(self.path, 'wb')
+        if not (self.pickle_file is None and self.memory):
+            dst = open(self.pickle_file, 'wb')
             pickle.dump(self.items, dst)
             dst.close()
 
@@ -152,12 +170,13 @@ class PersistenceManager(object):
             'pickle': PersistenceDict
         }
 
-    def getStorage(self, collection_id, subcollection, storage, params={}):
+    def get_storage(self, collection_id, subcollection, storage,
+                   path, params=None):
         """Returns the persistence class that matches the parameters"""
-        # TODO add storage cache
         return self.storages[storage](
             collection_id,
             subcollection,
+            path,
             params)
 
     @staticmethod
@@ -168,4 +187,3 @@ class PersistenceManager(object):
         return PersistenceManager._instance
 
 #TODO create a new class, we need to use sqlite3, or sqlalchemy
-

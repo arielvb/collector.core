@@ -8,7 +8,6 @@ Config Class
 import os
 import sys
 
-CONFIG_DIR_MODE = 0700
 PLAT = sys.platform.lower()
 
 ISWINDOWS = 'win32' in PLAT or 'win64' in PLAT
@@ -36,6 +35,7 @@ class Config(object):
     OSX = 1
     WINDOWS = 2
     OTHER = 3
+    DIR_MODE = 0700
 
     def __init__(self, platform=None):
         """ Constructor for Config, initialize all the attributes"""
@@ -125,7 +125,7 @@ class Config(object):
         import shutil
         base = self.config_dir
         if not os.path.exists(base):
-            os.makedirs(base, mode=CONFIG_DIR_MODE)
+            os.makedirs(base, mode=Config.DIR_MODE)
             appdata = self.get_appdata_path()
             # Do a full copy because no previus data exists
             for folder in subfolders:
