@@ -50,5 +50,5 @@ class File(object):
         for field in schema.fields:
             fields[field] = man.get(schema.fields[field])
             if field in dictvalues:
-                fields[field].setValue(dictvalues[field])
+                fields[field].set_value(dictvalues[field])
         return fields

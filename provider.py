@@ -55,7 +55,7 @@ class UrlProvider(Provider):
 
 
 class FileProvider(Provider):
-    """ Provider using the python builin function open"""
+    """ Provider using the python built-in function open"""
 
     def __init__(self, filename):
         super(FileProvider, self).__init__()

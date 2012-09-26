@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from fields import FieldManager
 
 
 class Schema(object):
@@ -18,16 +19,22 @@ class Schema(object):
         if isinstance(params, dict):
             self.loadFromDict(params)
 
+    def get_field(self, name):
+        return self.file[name]
+
+    def get_fields(self):
+        return self.fields
+
     def loadFromDict(self, config):
-        """Loads schema from a python dictionary"""
+        """Loads schema values from a python dictionary"""
         self.name = config['name']
         fields = config['fields']
         self.fields = fields
-        # for field in fields:
-        #     if Field.validate(fields[field]):
-        #         self.fields[field] = fields[field]
-        #     else:
-        #         raise Exception('Field ' + field + ' not valid')
+        self.file = {}
+        manager = FieldManager.get_instance()
+        for field in fields.items():
+            self.file[field[0]] = manager.get(field[1])
+
         if 'order' in config:
             self.order = []
             for item in config['order']:
@@ -35,7 +42,7 @@ class Schema(object):
                     self.order.append(item)
             # TODO what happens if one field key is not in the order values?
             if len(self.order) != len(fields):
-                raise Exception('Order must defeine all the fields')
+                raise Exception('Order must define all the fields')
         else:
             self.order = fields.keys()
         if 'default' in config:
