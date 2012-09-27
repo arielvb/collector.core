@@ -6,8 +6,9 @@ Each provider loads html content from diferent sources: urllib, open
 import urllib2
 import urllib
 from abc import ABCMeta, abstractmethod, abstractproperty
+import logging
 
-TIMEOUT = 60
+TIMEOUT = 120
 
 
 class Provider(object):
@@ -51,7 +52,10 @@ class UrlProvider(Provider):
         if (param):
             param = urllib.quote_plus(param)
             query = query % param
-        return urllib2.urlopen(query, timeout=TIMEOUT).read()
+        logging.debug("Provider: loading url %s", query)
+        results = urllib2.urlopen(query, timeout=TIMEOUT)
+        html = results.read()
+        return html
 
 
 class FileProvider(Provider):
