@@ -6,6 +6,7 @@ from config import Config
 import pickle
 from abc import ABCMeta, abstractmethod
 import copy
+from storage import PickleStorage, JSONStorage
 
 
 class Persistence(object):
@@ -48,18 +49,17 @@ class PersistenceDict(Persistence):
     """Implementation of persistence using a python dictionary"""
 
     _autoid = 1
-    FILE_EXTENSION = '.p'
 
     def __init__(self, collection_id, subcollection, path, params=None):
         super(PersistenceDict, self).__init__(collection_id,
          subcollection, path, params)
         self.items = []
-        self.pickle_file = None
+        self.data_storage = None
         self.memory = False
         # configure
         self.configure()
         # Create collection folder
-        self._create_path()
+        # self._create_path()
 
     def configure(self):
         """Configures the storage system"""
@@ -70,23 +70,22 @@ class PersistenceDict(Persistence):
         self.memory = params.get('memory', False)
         data = params.get('data', None)
         if self.path is not None:
-            pickle_file = os.path.join(self.path, self.subcollection +
-                                       self.FILE_EXTENSION)
-            if os.path.exists(pickle_file):
-                _file = open(pickle_file)
-                self.items = pickle.load(_file)
-                _file.close()
-                self.pickle_file = pickle_file
+            self.data_storage = PickleStorage(
+                self.path,
+                self.subcollection,
+                self.memory)
+            self.items = self.data_storage.load()
+            # pickle_file = os.path.join(self.path, self.subcollection +
+            #                            self.FILE_EXTENSION)
+            # if os.path.exists(pickle_file):
+            #     _file = open(pickle_file)
+            #     self.items = pickle.load(_file)
+            #     _file.close()
+            #     self.pickle_file = pickle_file
         elif data is not None:
             self.items = data
 
         self._calc_autoid()
-
-    def _create_path(self):
-        """Creates the path where all the data will be stored"""
-        if not self.memory and self.path is not None:
-            if not os.path.exists(self.path):
-                os.makedirs(self.path, Config.DIR_MODE)
 
     def _calc_autoid(self):
         """Searchs the max id used and set's the new autoid value"""
@@ -148,11 +147,13 @@ class PersistenceDict(Persistence):
 
     def commit(self):
         """Stores the changes"""
+        if self.data_storage is not None:
+            self.data_storage.save(self.items)
         # Store with pickle
-        if not (self.pickle_file is None and self.memory):
-            dst = open(self.pickle_file, 'wb')
-            pickle.dump(self.items, dst)
-            dst.close()
+        # if not (self.pickle_file is None and self.memory):
+        #     dst = open(self.pickle_file, 'wb')
+        #     pickle.dump(self.items, dst)
+        #     dst.close()
 
 
 class PersistenceManager(object):
@@ -169,6 +170,10 @@ class PersistenceManager(object):
         self.storages = {
             'pickle': PersistenceDict
         }
+
+    @staticmethod
+    def load_schema(path, collection, readonly):
+        return JSONStorage(path, collection, readonly).load()
 
     def get_storage(self, collection_id, subcollection, storage,
                    path, params=None):

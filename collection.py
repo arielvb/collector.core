@@ -2,6 +2,7 @@
 from persistence import PersistenceManager
 from schema import Schema
 from config import Config
+import logging
 
 
 class Collection(object):
@@ -78,22 +79,27 @@ class Collection(object):
         item['refLoaded'] = True
 
 import os
-import json
-
-_collectionManagerInstance = None
 
 
 class CollectionManager():
 
     collections = {}
+    _instance = None
+
+    @staticmethod
+    def get_instance():
+        if CollectionManager._instance is None:
+            CollectionManager._instance = CollectionManager()
+        return CollectionManager._instance
 
     def __init__(self):
         self.persistence = ''
         self.name = ''
         self.title = ''
         self.author = ''
-        if _collectionManagerInstance is not None:
+        if CollectionManager._instance is not None:
             raise Exception('Called more than once')
+        CollectionManager._instance = self
         self._config = Config.get_instance()
         path = os.path.join(self._config.get_data_path(), 'collections')
         self.collections = self.discover_collections(path)
@@ -103,16 +109,16 @@ class CollectionManager():
         collections = {}
         try:
             allfiles = os.listdir(path)
-        except Exception:
-            #TODO log this!
-            pass
+        except Exception as error:
+            logging.exception(error)
+
         pers_man = PersistenceManager.get_instance()
         for item in allfiles:
             c_path = os.path.join(path, item)
             if CollectionManager.is_collection_folder(c_path):
-                # try:
-                file = open(os.path.join(c_path, item + ".json"))
-                raw = json.load(file)
+                #TODO remove readonly argument
+                raw = PersistenceManager.load_schema(c_path, item,
+                                                     readonly=True)
                 persistence = raw['persistence']
                 self.author = raw['author']
                 self.title = raw['name']
@@ -155,10 +161,3 @@ class CollectionManager():
     @staticmethod
     def is_collection_folder(item):
         return os.path.isdir(item)
-
-    @staticmethod
-    def get_instance():
-        global _collectionManagerInstance
-        if _collectionManagerInstance is None:
-            _collectionManagerInstance = CollectionManager()
-        return _collectionManagerInstance
