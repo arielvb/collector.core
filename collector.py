@@ -16,19 +16,26 @@ class Collector(object):
         'build_user_dir': "Build the user data directory",
         'plugins_enabled': "List of plugins enabled",
         'home': "The application data directory, could be a path or:" +
-                " ':auto:', ':resources:'"
+                " ':auto:', ':resources:'",
+        'lang': """The application language must be locale_COUNTRY
+                    or ':system:'.
+                    Examples:
+                        en_UK for English (United Kingdom)
+                        ca_ES for catalan
+                        es_ES for spanish
+                """,
     }
 
     # Default settings
     _settings = {
         'build_user_dir': False,
         'plugins_enabled': ['PluginHellouser', 'PluginBoardGameGeek'],
-        'home': ':auto:'
+        'home': ':auto:',
+        'lang': ':system:',
     }
 
     managers = {}
 
-    """Collector joins everything"""
     def __init__(self, params=None):
         if Collector._instance is not None:
             raise Exception("Called more than once")
