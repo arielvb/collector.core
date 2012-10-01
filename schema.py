@@ -7,8 +7,10 @@ class Schema(object):
         Schema class
     """
 
-    def __init__(self, params=None):
+    def __init__(self, collection, id_, params=None):
         super(Schema, self).__init__()
+        self.id = id_
+        self.collection = collection
         self.name = None
         self.fields = {}
         self.order = []

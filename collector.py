@@ -15,12 +15,15 @@ class Collector(object):
     param_definition = {
         'build_user_dir': "Build the user data directory",
         'plugins_enabled': "List of plugins enabled",
+        'home': "The application data directory, could be a path or:" +
+                " ':auto:', ':resources:'"
     }
 
     # Default settings
     _settings = {
-        'build_user_dir': True,
-        'plugins_enabled': ['PluginHellouser', 'PluginBoardGameGeek']
+        'build_user_dir': False,
+        'plugins_enabled': ['PluginHellouser', 'PluginBoardGameGeek'],
+        'home': ':auto:'
     }
 
     managers = {}

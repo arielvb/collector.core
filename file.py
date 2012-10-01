@@ -2,53 +2,33 @@
 """
 File (Fitxa)
 ------------
-The basic element of a collection.
+Each element of a collection is a file.
 
 ..warning:
     This module name has the same name as the builtin function *file*.
 """
 
-from fields import FieldManager
-from schema import Schema
+
+class FileInterface(object):
+    """Marker for each item that must be a File"""
 
 
-class File(object):
-    """The basic element of a collection"""
-    def __init__(self, schema, fields=None):
-        super(File, self).__init__()
-        if (schema is None or not isinstance(schema, Schema)):
-            raise Exception("Bad Arguments")
-        # if isinstance(fields, dict):
-        #     if len(fields) > 0:
-        #         for field in fields:
-        #             if not isinstance(fields[0], Field):
-        #                 raise Exception("Bad Arguments")
-        #     # else:
-        #     #     raise Exception("Bad Arguments")
-        #     self.fields = fields
-        if isinstance(fields, dict):
-            self.fields = self._load_fields_from_dict(fields, schema)
-        elif fields is None:
-            self.fields = {}
-        else:
-            raise Exception("Bad Arguments")
+class File(FileInterface):
+    """File is a group of fields"""
 
-        # TODO refractor _load_fields_from_dict and the code above to the
-        #  class Schema
-        # Create empty fields
-        man = FieldManager.get_instance()
-        for field in schema.fields:
-            if not field in self.fields:
-                self.fields[field] = man.get(schema.fields[field])
+    def __init__(self, fields):
+        for field in fields.items():
+            setattr(self, field[0], field[1])
 
-    @classmethod
-    def _load_fields_from_dict(cls, dictvalues, schema):
-        """ Trasnlates the *dictvalues* of basic types using the schema of
-        the *collection* into *Field* objects"""
-        fields = {}
-        man = FieldManager.get_instance()
-        for field in schema.fields:
-            fields[field] = man.get(schema.fields[field])
-            if field in dictvalues:
-                fields[field].set_value(dictvalues[field])
-        return fields
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key, '')
+
+    def __iter__(self):
+        return iter(self.__dict__)
+
+    def update(self, fields):
+        for field in fields.items():
+            setattr(self, field[0], field[1])

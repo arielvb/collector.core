@@ -7,9 +7,9 @@ import logging
 
 class Collection(object):
 
-    def __init__(self, collectionName, schema, persistence):
+    def __init__(self, id_, schema, persistence):
         super(Collection, self).__init__()
-        self.name = collectionName
+        self.name = id_
         self.schema = schema
         self.db = persistence
 
@@ -62,19 +62,16 @@ class Collection(object):
                 if len(config) == 2:
                     refCollection = collections.getCollection(config[0])
                     refAttr = config[1]
-                    #TODO warning when ref[0] is difrent a refCollection.name, the schema was updated
-                    # but not the db
                     if 'multiple' not in field:
-                        ref = item[fieldId].split(':')
-                        if (len(ref) == 2):
-                            refItem = refCollection.get(ref[1])
-                            item[fieldId] = refItem[refAttr]
+                        ref = item[fieldId]
+                        refItem = refCollection.get(ref)
+                        item[fieldId] = refItem[refAttr]
                     else:
                         _list = item[fieldId]
                         for i in range(0, len(_list)):
                             if _list[i] != '':
-                                ref = _list[i].split(':')
-                                refItem = refCollection.get(ref[1])
+                                ref = _list[i]
+                                refItem = refCollection.get(ref)
                                 _list[i] = refItem[refAttr]
         item['refLoaded'] = True
 
@@ -92,17 +89,21 @@ class CollectionManager():
             CollectionManager._instance = CollectionManager()
         return CollectionManager._instance
 
-    def __init__(self):
+    def __init__(self, autodiscover=True):
         self.persistence = ''
         self.name = ''
         self.title = ''
         self.author = ''
+        self.description = ''
         if CollectionManager._instance is not None:
             raise Exception('Called more than once')
         CollectionManager._instance = self
         self._config = Config.get_instance()
         path = os.path.join(self._config.get_data_path(), 'collections')
-        self.collections = self.discover_collections(path)
+        if autodiscover:
+            self.collections = self.discover_collections(path)
+        else:
+            self.collections = {}
 
     def discover_collections(self, path):
         allfiles = []
@@ -126,19 +127,21 @@ class CollectionManager():
                 self.persistence = persistence['storage']
                 schemas = raw['schemas']
                 for id_ in schemas:
-                    storage = pers_man.get_storage(item, id_,
-                                                  persistence['storage'],
+                    file_ = Schema(item, id_, schemas[id_])
+                    storage = pers_man.get_storage(file_,
+                                                  self.persistence,
                                                   c_path
                                                   )
                     collection = Collection(
                         id_,
-                        Schema(schemas[id_]),
+                        file_,
                         storage)
                     collections[id_] = collection
                 #TODO load more than one
                 return collections
                 # except Exception:
                 #     pass
+        return collections
 
     def get_author(self):
         return self.author
@@ -154,6 +157,8 @@ class CollectionManager():
 
     def getCollection(self, collectionName):
         return self.collections[collectionName]
+
+    get_collection = getCollection
 
     def getConfig(self):
         return self._config

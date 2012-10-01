@@ -64,7 +64,6 @@ class JSONStorage(FileStorage):
         return 'json'
 
     def do_load(self):
-        print self.file
         file_ = open(self.file)
         content = json.load(file_)
         file_.close()

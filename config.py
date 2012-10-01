@@ -49,6 +49,8 @@ class Config(object):
         self.platform = platform
         self.config_dir = Config.calculate_data_path(platform)
         self.resources = self.get_resources_path()
+        self.config_dir = self.get_appdata_path()  # TODO remove me!
+
         #os.read(os.path.join(self.path, 'resources/config/ui.json'))
 
     @staticmethod

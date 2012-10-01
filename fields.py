@@ -14,6 +14,7 @@ class Field(object):
     """Base class for all the fields"""
     __metaclass__ = ABCMeta
 
+    #TODO refractor to class_ (pyqt style for overrided keyworkds)
     _class = ''
     name = ''
     reference = None
@@ -34,6 +35,9 @@ class Field(object):
 
         self.name = name
         self._params = params
+
+    def get_id(self):
+        return self.name.lower().replace('/', '').replace(' ', '')
 
     def is_multivalue(self):
         """Is true when the field is multivalued"""

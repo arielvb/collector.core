@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """Persistence allows Collector to store the data in a persistence way"""
 
-import os
-from config import Config
-import pickle
 from abc import ABCMeta, abstractmethod
 import copy
 from storage import PickleStorage, JSONStorage
+from file import File
 
 
 class Persistence(object):
@@ -14,13 +12,13 @@ class Persistence(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, collection_id, subcollection, path, params=None):
+    def __init__(self, schema, path, params=None):
         super(Persistence, self).__init__()
         if not params is None and not isinstance(params, dict):
             raise Exception('Params are not a dict')
         self.path = path
-        self.collection_id = collection_id
-        self.subcollection = subcollection
+        self.collection_id = schema.collection
+        self.subcollection = schema.id
         self.params = params
 
     @abstractmethod
@@ -50,16 +48,13 @@ class PersistenceDict(Persistence):
 
     _autoid = 1
 
-    def __init__(self, collection_id, subcollection, path, params=None):
-        super(PersistenceDict, self).__init__(collection_id,
-         subcollection, path, params)
+    def __init__(self, schema, path, params=None):
+        super(PersistenceDict, self).__init__(schema, path, params)
         self.items = []
         self.data_storage = None
         self.memory = False
         # configure
         self.configure()
-        # Create collection folder
-        # self._create_path()
 
     def configure(self):
         """Configures the storage system"""
@@ -75,13 +70,6 @@ class PersistenceDict(Persistence):
                 self.subcollection,
                 self.memory)
             self.items = self.data_storage.load()
-            # pickle_file = os.path.join(self.path, self.subcollection +
-            #                            self.FILE_EXTENSION)
-            # if os.path.exists(pickle_file):
-            #     _file = open(pickle_file)
-            #     self.items = pickle.load(_file)
-            #     _file.close()
-            #     self.pickle_file = pickle_file
         elif data is not None:
             self.items = data
 
@@ -99,8 +87,11 @@ class PersistenceDict(Persistence):
          with the count parameter, the items are orderded by last inserted"""
         result = self.items[-count:]
         # Reverse the count
+        objects = []
         result.reverse()
-        return result
+        for item in result:
+            objects.append(File(item))
+        return objects
 
     def get(self, _id):
         # TODO validate id is integer
@@ -108,23 +99,28 @@ class PersistenceDict(Persistence):
             _id = int(_id)
         for item in self.items:
             if _id == item['id']:
-                return copy.deepcopy(item)
+                return File(item)
         return None
 
     def get_all(self, start_at, limit):
         """Returns all the items starting at *start_at*, the results could
          be limited whit *limit*"""
+        result = []
+        objects = []
         if limit == 0:
-            return self.items[start_at:]
+            objects = self.items[start_at:]
         else:
-            return self.items[start_at:(start_at + limit)]
+            objects = self.items[start_at:(start_at + limit)]
+        for item in objects:
+            result.append(File(item))
+        return result
 
     def search(self, term):
         results = []
         term = term.lower()
         for item in self.items:
-            if item['name'].lower().find(term) != -1:
-                results.append(copy.deepcopy(item))
+            if item['title'].lower().find(term) != -1:
+                results.append(File(item))
         return results
 
     def save(self, values):
@@ -149,11 +145,6 @@ class PersistenceDict(Persistence):
         """Stores the changes"""
         if self.data_storage is not None:
             self.data_storage.save(self.items)
-        # Store with pickle
-        # if not (self.pickle_file is None and self.memory):
-        #     dst = open(self.pickle_file, 'wb')
-        #     pickle.dump(self.items, dst)
-        #     dst.close()
 
 
 class PersistenceManager(object):
@@ -167,20 +158,22 @@ class PersistenceManager(object):
             raise Exception('Called more that once')
 
         super(PersistenceManager, self).__init__()
+        from persistence_sql import PersistenceAlchemy
+
         self.storages = {
-            'pickle': PersistenceDict
+            'pickle': PersistenceDict,
+            'sqlalchemy': PersistenceAlchemy
         }
 
     @staticmethod
     def load_schema(path, collection, readonly):
         return JSONStorage(path, collection, readonly).load()
 
-    def get_storage(self, collection_id, subcollection, storage,
+    def get_storage(self, schema, storage,
                    path, params=None):
         """Returns the persistence class that matches the parameters"""
         return self.storages[storage](
-            collection_id,
-            subcollection,
+            schema,
             path,
             params)
 
@@ -190,5 +183,3 @@ class PersistenceManager(object):
         if PersistenceManager._instance is None:
             PersistenceManager._instance = PersistenceManager()
         return PersistenceManager._instance
-
-#TODO create a new class, we need to use sqlite3, or sqlalchemy
