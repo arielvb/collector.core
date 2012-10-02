@@ -106,6 +106,12 @@ class Collector(object):
         plugin = self.managers['plugin'].get(plugin_id)
         return plugin.get(file_id, provider)
 
+    def quick_search(self, term, collection):
+        """Returns the results of the quick search for term in
+         the selected collection"""
+        man = self.manager['collection'].get(collection)
+        return man.serch(term)
+
 
 if __name__ == '__main__':
     Collector()

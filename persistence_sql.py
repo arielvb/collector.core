@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 """PersistenceAlchemy allows Collector to store the data using SQLAlchemy"""
+
+# Take a look to dictionary collections p.95 true page: 109
+
 from persistence import Persistence
-from file import File
+from file import FileAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Sequence
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy import Column, Integer, String, Sequence, ForeignKey, Table
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.pool import StaticPool
+
 
 import os
 
@@ -21,6 +27,8 @@ class Alchemy(object):
         Alchemy._instance = self
         self.engine = {}
         self.session = {}
+        self.classes = {}
+        self.Base = declarative_base()
 
     @staticmethod
     def destroy():
@@ -35,7 +43,9 @@ class Alchemy(object):
 
     def get_engine(self, key):
         if not key in self.engine:
-            self.engine[key] = create_engine('sqlite:///' + key, echo=True)
+            self.engine[key] = create_engine('sqlite:///' + key,
+             connect_args={'check_same_thread': False},
+             poolclass=StaticPool, echo=True)
         return self.engine[key]
 
     def get_session(self, key):
@@ -61,15 +71,19 @@ class PersistenceAlchemy(Persistence):
         # echo is useful for debug
         self.man = Alchemy.get_instance()
         self.engine = self.man.get_engine(file_path)
-        Base = declarative_base()
+        self._assoc = []
 
-        attributes = PersistenceAlchemy.get_columns(schema)
+        attributes = self.get_columns(schema)
         self._class = type(str(schema.collection + "_" + schema.id),
-                         (File, Base), attributes)
-        # TODO (important) for each field that is multivalue whe must create a new class,
-        # and the attribute must be a foreing key!
-        Base.metadata.create_all(self.engine)
+                         (FileAlchemy, self.man.Base), attributes)
+        # TODO (important) for each field that is multivalue whe must
+        # create a new class, and the attribute must be a foreing key!
+        # or ... take a look to sqlalchemy: Relationships
+        # For reference value also a relations must be defeined
         self._session = self.man.get_session(file_path)
+
+    def all_created(self):
+        self.man.Base.metadata.create_all(self.engine)
 
     def next_id(self):
         """Returns the new id to insert in the table"""
@@ -79,8 +93,7 @@ class PersistenceAlchemy(Persistence):
             max_id = 1
         return max_id + 1
 
-    @staticmethod
-    def get_columns(schema):
+    def get_columns(self, schema):
         columns = {}
         # Extra fields
         columns['__tablename__'] = schema.id
@@ -91,37 +104,70 @@ class PersistenceAlchemy(Persistence):
 
         # columns['__init__'] = m_init
 
-        # Note: sqlite doesn't use Sequence
+        # Note: sqlite doesn't use Sequence, its for Oracle
         columns['id'] = Column('id', Integer, Sequence('id_seq'),
                           primary_key=True)
+        class_prefix = schema.collection + "_"
+
         for field in schema.file.values():
-            columns[field.get_id()] = (
-                PersistenceAlchemy.field2column(field))
+            id_ = field.get_id()
+            if field.is_multivalue():
+                raise Exception("Multivalue is not supported by SQL")
+            if field._class == 'text' or field._class == 'image':
+                columna = Column(id_, String)
+            elif field._class == 'ref':
+                # assoc_table = str(schema.id + '_' + id_)
+                # ref_table = type(assoc_table,
+                #       (self.man.Base,), {
+                #       '__tablename__': assoc_table,
+                #       'id': Column(Integer, primary_key=True),
+                #       schema.id + '_id': Column(Integer,
+                #              ForeignKey(schema.id + '.id')),
+                #       field.ref_collection + '_id': Column(Integer,
+                #         ForeignKey(field.ref_collection + '.id'))
+                #       })
+                # columns['relation' + '_' + id_] = relationship(ref_table, uselist=False,
+                #                              backref=id_ + 'backref')
+                # This case is only for references that aren't multivalue
+                #  for multivalues references, is needed a extra table, the
+                #  code comented up and down is and aproximitation.
+
+                # Many to one
+                columna = Column(Integer,
+                                 ForeignKey(field.ref_collection + '.id'))
+                columns[id_ + '_relation'] = relationship(schema.collection +
+                     "_" + field.ref_collection,
+                     primaryjoin="%s.%s==%s.id" %
+                         (class_prefix + schema.id,
+                          id_,
+                          class_prefix + field.ref_collection)
+                    )
+
+                # self._assoc.append(ref_table)
+                # columna = association_proxy('relation' + '_' + id_,
+                #             field.ref_collection + '_id'    ,
+                #             creator = lambda value: ref_table())
+            elif field._class == 'int':
+                columna = Column(id_, Integer)
+            columns[id_] = columna
+        # TODO clean debug line
+        # from PyQt4.Qt import qDebug; qDebug("AAA " + str(columns))
         return columns
 
-    @staticmethod
-    def field2column(field):
-        """Returns the equivalent SQLAlchemy column given a Field"""
-        id_ = field.get_id()
-        if field._class == 'text' or field._class == 'image' or field._class == 'ref':
-            return Column(id_, String)
-        if field._class == 'int':
-            return Column(id_, Integer)
-
     def get(self, _id):
-        # TODO nothing better that filter_by? doesn't exisits get(id)?
-        return self._session.query(self._class).filter_by(id=_id).first()
+        return self._session.query(self._class).get(_id)
 
     def get_last(self, count):
-        # TODO
-        return self._session.query(self._class).all()
+        return self._session.query(self._class).limit(count)
 
     def get_all(self, start_at, limit):
         # TODO
         return self._session.query(self._class).all()
 
     def search(self, term):
-        raise NotImplemented()
+        return self._session.query(self._class).filter(
+            getattr(self._class, self.schema.default).contains(term)
+            ).all()
 
     def save(self, values):
         # TODO fixme, value must not be a dictionary must be a File
@@ -131,9 +177,7 @@ class PersistenceAlchemy(Persistence):
             self._session.commit()
             values['id'] = obj.id
         else:
-            obj = self._session.query(self._class).filter_by(
-                id=values['id']).first()
-            #TODO
+            obj = self._session.query(self._class).get(values['id'])
             obj.update(values)
             self._session.commit()
         return obj

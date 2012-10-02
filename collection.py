@@ -3,6 +3,7 @@ from persistence import PersistenceManager
 from schema import Schema
 from config import Config
 import logging
+import copy
 
 
 class Collection(object):
@@ -49,6 +50,7 @@ class Collection(object):
     def loadReferences(self, item):
         #TODO this code needs use the Field Abstract Class
         #TODO group reference values for a faster load
+        item = copy.deepcopy(item)
         if 'refLoaded' in item:
             return
 
@@ -62,18 +64,23 @@ class Collection(object):
                 if len(config) == 2:
                     refCollection = collections.getCollection(config[0])
                     refAttr = config[1]
-                    if 'multiple' not in field:
+                    if not self.schema.isMultivalue(fieldId):
                         ref = item[fieldId]
                         refItem = refCollection.get(ref)
-                        item[fieldId] = refItem[refAttr]
+                        if refItem is not None:
+                            item[fieldId] = refItem[refAttr]
                     else:
                         _list = item[fieldId]
                         for i in range(0, len(_list)):
                             if _list[i] != '':
                                 ref = _list[i]
                                 refItem = refCollection.get(ref)
-                                _list[i] = refItem[refAttr]
+                                if refItem is not None:
+                                    _list[i] = refItem[refAttr]
+                                # else:
+                                    # _list[i] = u'Error: Unknown value'
         item['refLoaded'] = True
+        return item
 
 import os
 
@@ -137,6 +144,9 @@ class CollectionManager():
                         file_,
                         storage)
                     collections[id_] = collection
+                # TODO this notify must be a hook
+                for collection in collections.values():
+                    collection.db.all_created()
                 #TODO load more than one
                 return collections
                 # except Exception:

@@ -17,6 +17,7 @@ class Persistence(object):
         if not params is None and not isinstance(params, dict):
             raise Exception('Params are not a dict')
         self.path = path
+        self.schema = schema
         self.collection_id = schema.collection
         self.subcollection = schema.id
         self.params = params
@@ -42,6 +43,9 @@ class Persistence(object):
     def save(self, values):
         """Saves the values if they have a valid id or creates a new entry"""
 
+    def all_created(self):
+        """Hook: called when all the files of the collection has been loaded"""
+
 
 class PersistenceDict(Persistence):
     """Implementation of persistence using a python dictionary"""
@@ -65,7 +69,7 @@ class PersistenceDict(Persistence):
         self.memory = params.get('memory', False)
         data = params.get('data', None)
         if self.path is not None:
-            self.data_storage = PickleStorage(
+            self.data_storage = JSONStorage(
                 self.path,
                 self.subcollection,
                 self.memory)
