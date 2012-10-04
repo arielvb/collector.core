@@ -3,7 +3,7 @@ from persistence import PersistenceManager
 from schema import Schema
 from config import Config
 import logging
-import copy
+import os
 
 
 class Collection(object):
@@ -48,41 +48,8 @@ class Collection(object):
         return self._config
 
     def loadReferences(self, item):
-        #TODO this code needs use the Field Abstract Class
-        #TODO group reference values for a faster load
-        item = copy.deepcopy(item)
-        if 'refLoaded' in item:
-            return
-
-        fields = self.schema.fields
-        collections = CollectionManager.get_instance()
-        for fieldId in fields:
-            field = fields[fieldId]
-            if field['class'] == 'ref':
-                config = field['params']['ref'].split('.')
-                # TODO how to control if the references of the item aren't yet loaded
-                if len(config) == 2:
-                    refCollection = collections.getCollection(config[0])
-                    refAttr = config[1]
-                    if not self.schema.isMultivalue(fieldId):
-                        ref = item[fieldId]
-                        refItem = refCollection.get(ref)
-                        if refItem is not None:
-                            item[fieldId] = refItem[refAttr]
-                    else:
-                        _list = item[fieldId]
-                        for i in range(0, len(_list)):
-                            if _list[i] != '':
-                                ref = _list[i]
-                                refItem = refCollection.get(ref)
-                                if refItem is not None:
-                                    _list[i] = refItem[refAttr]
-                                # else:
-                                    # _list[i] = u'Error: Unknown value'
-        item['refLoaded'] = True
-        return item
-
-import os
+        man = CollectionManager.get_instance()
+        return self.db.load_references(man, item)
 
 
 class CollectionManager():

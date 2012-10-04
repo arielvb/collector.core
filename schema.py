@@ -13,13 +13,20 @@ class Schema(object):
         self.collection = collection
         self.name = None
         self.fields = {}
+        self.file = {}
         self.order = []
         # TODO icona e imatge per defecte
         self.ico = None
         self.image = None
         self._raw = params
+        self.default = None
         if isinstance(params, dict):
             self.loadFromDict(params)
+
+    def add_field(self, field):
+        self.file[field.get_id()] = field
+        if self.default is None:
+            self.default = field.get_id()
 
     def get_field(self, name):
         return self.file[name]

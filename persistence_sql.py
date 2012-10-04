@@ -11,14 +11,14 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Sequence, ForeignKey, Table
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
-
-
+import copy
 import os
 
 
 class Alchemy(object):
 
     _instance = None
+    echo = False
 
     def __init__(self):
         super(Alchemy, self).__init__()
@@ -45,7 +45,7 @@ class Alchemy(object):
         if not key in self.engine:
             self.engine[key] = create_engine('sqlite:///' + key,
              connect_args={'check_same_thread': False},
-             poolclass=StaticPool, echo=True)
+             poolclass=StaticPool, echo=Alchemy.echo)
         return self.engine[key]
 
     def get_session(self, key):
@@ -54,6 +54,10 @@ class Alchemy(object):
         if not key in self.session:
             self.session[key] = sessionmaker(bind=self.engine[key])()
         return self.session[key]
+
+
+def multivalue_table_init(self, k):
+    self.value = k
 
 
 class PersistenceAlchemy(Persistence):
@@ -97,12 +101,7 @@ class PersistenceAlchemy(Persistence):
         columns = {}
         # Extra fields
         columns['__tablename__'] = schema.id
-        # custom __init__
-
-        # def m_init(self, values):
-            # super(FileAlchemy, self).__init__(values)
-
-        # columns['__init__'] = m_init
+        columns['schema'] = schema
 
         # Note: sqlite doesn't use Sequence, its for Oracle
         columns['id'] = Column('id', Integer, Sequence('id_seq'),
@@ -111,44 +110,68 @@ class PersistenceAlchemy(Persistence):
 
         for field in schema.file.values():
             id_ = field.get_id()
-            if field.is_multivalue():
-                raise Exception("Multivalue is not supported by SQL")
-            if field._class == 'text' or field._class == 'image':
-                columna = Column(id_, String)
+            value = Column(String)
+            if field._class == 'int':
+                value = Column(Integer)
             elif field._class == 'ref':
-                # assoc_table = str(schema.id + '_' + id_)
-                # ref_table = type(assoc_table,
-                #       (self.man.Base,), {
-                #       '__tablename__': assoc_table,
-                #       'id': Column(Integer, primary_key=True),
-                #       schema.id + '_id': Column(Integer,
-                #              ForeignKey(schema.id + '.id')),
-                #       field.ref_collection + '_id': Column(Integer,
-                #         ForeignKey(field.ref_collection + '.id'))
-                #       })
-                # columns['relation' + '_' + id_] = relationship(ref_table, uselist=False,
-                #                              backref=id_ + 'backref')
-                # This case is only for references that aren't multivalue
-                #  for multivalues references, is needed a extra table, the
-                #  code comented up and down is and aproximitation.
+                value = Column(Integer,
+                             ForeignKey(field.ref_collection + '.id'))
+            if field.is_multivalue():
+                # One to many
+                #             _id
+                # [schema] 1 ----> * [values]
+                assoc_table = str(schema.id + '_' + id_)
+                ref_table = type(assoc_table,
+                      (self.man.Base,), {
+                      '__tablename__': assoc_table,
+                      'id': Column(Integer, primary_key=True),
+                      schema.id + '_id': Column(Integer,
+                             ForeignKey(schema.id + '.id')),
+                      'value': value,
+                      '__init__': multivalue_table_init
+                      })
+                columns[id_ + 'relation'] = relationship(ref_table)
+                columna = association_proxy(id_ + 'relation', 'value')
+            else:
+                if field._class == 'ref':
+                    if field.is_multivalue():
+                        raise Exception("Multivalue ref is not supported by SQL")
+                    # assoc_table = str(schema.id + '_' + id_)
+                    # ref_table = type(assoc_table,
+                    #       (self.man.Base,), {
+                    #       '__tablename__': assoc_table,
+                    #       'id': Column(Integer, primary_key=True),
+                    #       schema.id + '_id': Column(Integer,
+                    #              ForeignKey(schema.id + '.id')),
+                    #       field.ref_collection + '_id': Column(Integer,
+                    #         ForeignKey(field.ref_collection + '.id'))
+                    #       })
+                    # columns['relation' + '_' + id_] = relationship(ref_table, uselist=False,
+                    #                              backref=id_ + 'backref')
+                    # This case is only for references that aren't multivalue
+                    #  for multivalues references, is needed a extra table, the
+                    #  code comented up and down is and aproximitation.
 
-                # Many to one
-                columna = Column(Integer,
-                                 ForeignKey(field.ref_collection + '.id'))
-                columns[id_ + '_relation'] = relationship(schema.collection +
-                     "_" + field.ref_collection,
-                     primaryjoin="%s.%s==%s.id" %
-                         (class_prefix + schema.id,
-                          id_,
-                          class_prefix + field.ref_collection)
-                    )
+                    # Many to one:
+                    # without backref: [boardgames] * ---> 1 [designers]
+                    # with backref [boardgames] * <---> 1 [designers]
+                    columna = value
+                    columns[id_ + '_relation'] = relationship(schema.collection +
+                        "_" + field.ref_collection,
+                        primaryjoin="%s.%s==%s.id" %
+                             (class_prefix + schema.id,
+                              id_,
+                              class_prefix + field.ref_collection),
+                        backref=schema.id + ' ' + id_
+                        )
 
-                # self._assoc.append(ref_table)
-                # columna = association_proxy('relation' + '_' + id_,
-                #             field.ref_collection + '_id'    ,
-                #             creator = lambda value: ref_table())
-            elif field._class == 'int':
-                columna = Column(id_, Integer)
+                    # self._assoc.append(ref_table)
+                    # columna = association_proxy('relation' + '_' + id_,
+                    #             field.ref_collection + '_id'    ,
+                    #             creator = lambda value: ref_table())
+                else:
+                    # if field._class in ['int', 'text' or 'image']
+                    columna = value
             columns[id_] = columna
         # TODO clean debug line
         # from PyQt4.Qt import qDebug; qDebug("AAA " + str(columns))
@@ -181,3 +204,24 @@ class PersistenceAlchemy(Persistence):
             obj.update(values)
             self._session.commit()
         return obj
+
+    def load_references(self, collections, item):
+        """Loads all the referenced values using sqlalchemy relations"""
+        # TODO implement multivalue references
+        if 'refLoaded' in item:
+            return
+        out = {}
+        fields = self.schema.file
+        for field in fields.values():
+            id_ = field.get_id()
+            if field._class == 'ref':
+                ref = getattr(item, id_ + '_relation')
+                if ref is not None:
+                    out[id_] = getattr(ref, field.ref_field)
+                else:
+                    out[id_] = ''
+            else:
+                out[id_] = item[id_]
+
+        out['refLoaded'] = True
+        return out

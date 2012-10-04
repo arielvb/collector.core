@@ -43,6 +43,10 @@ class Persistence(object):
     def save(self, values):
         """Saves the values if they have a valid id or creates a new entry"""
 
+    @abstractmethod
+    def load_references(self, collections, item):
+        """Loads all the referenced values"""
+
     def all_created(self):
         """Hook: called when all the files of the collection has been loaded"""
 
@@ -149,6 +153,40 @@ class PersistenceDict(Persistence):
         """Stores the changes"""
         if self.data_storage is not None:
             self.data_storage.save(self.items)
+
+    def load_references(self, collections, item):
+        #TODO this code needs use the Field Abstract Class
+        #TODO group reference values for a faster load
+        item = copy.deepcopy(item)
+        if 'refLoaded' in item:
+            return
+
+        fields = self.schema.fields
+        for fieldId in fields:
+            field = fields[fieldId]
+            if field['class'] == 'ref':
+                config = field['params']['ref'].split('.')
+                # TODO how to control if the references of the item aren't yet loaded
+                if len(config) == 2:
+                    refCollection = collections.getCollection(config[0])
+                    refAttr = config[1]
+                    if not self.schema.isMultivalue(fieldId):
+                        ref = item[fieldId]
+                        refItem = refCollection.get(ref)
+                        if refItem is not None:
+                            item[fieldId] = refItem[refAttr]
+                    else:
+                        _list = item[fieldId]
+                        for i in range(0, len(_list)):
+                            if _list[i] != '':
+                                ref = _list[i]
+                                refItem = refCollection.get(ref)
+                                if refItem is not None:
+                                    _list[i] = refItem[refAttr]
+                                # else:
+                                    # _list[i] = u'Error: Unknown value'
+        item['refLoaded'] = True
+        return item
 
 
 class PersistenceManager(object):
