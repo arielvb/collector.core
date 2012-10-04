@@ -14,8 +14,7 @@ class Field(object):
     """Base class for all the fields"""
     __metaclass__ = ABCMeta
 
-    #TODO refractor to class_ (pyqt style for overrided keyworkds)
-    _class = ''
+    class_ = ''
     name = ''
     reference = None
     single_value = True
@@ -37,6 +36,8 @@ class Field(object):
         self._params = params
 
     def get_id(self):
+        """Returns the identifier of the field, this identifier is unique
+            at file level. But not at collection level"""
         return self.name.lower().replace('/', '').replace(' ', '')
 
     def is_multivalue(self):
@@ -80,12 +81,12 @@ class Field(object):
 
     @abstractproperty
     def get_pretty_type(self):
-        """Returns the pretty name of the _class of field"""
+        """Returns the pretty name of the class_ of field"""
 
 
 class FieldText(Field):
     """A field whit type text"""
-    _class = 'text'
+    class_ = 'text'
 
     def get_pretty_type(self):
         return "Text"
@@ -93,7 +94,7 @@ class FieldText(Field):
 
 class FieldInt(Field):
     """Custom field where the only accepted value are int"""
-    _class = 'int'
+    class_ = 'int'
 
     def set_value(self, value):
         """Overrides the default method to cast the values to int"""
@@ -120,7 +121,7 @@ from config import Config
 class FieldImage(Field):
     """Field that represents an image"""
 
-    _class = 'image'
+    class_ = 'image'
 
     def get_value(self):
         image = self.value
@@ -145,7 +146,7 @@ class FieldImage(Field):
 class FieldRef(Field):
     """Defeines a reference to another field"""
 
-    _class = 'ref'
+    class_ = 'ref'
 
     def __init__(self, name, multiple=False, params=None, value=None):
         super(FieldRef, self).__init__(name, multiple, params, value)
@@ -153,7 +154,6 @@ class FieldRef(Field):
         parts = self._params['ref'].split('.')
         self.ref_collection = parts[0]
         self.ref_field = parts[1]
-        self.full = None
 
     def _validate(self):
         """Checks that the reference is valid"""
@@ -165,17 +165,10 @@ class FieldRef(Field):
 
     def get_fullfield(self, collections):
         """ Obtains the full object of the referenced value"""
-        # TODO must call to persistence object?
-        if self.full is None:
-            parts = self.value.split(':')
-            if len(parts) == 2:
-                # man = CollectionManager.get_instance()
-                # col = man.getCollection(parts[0])
-                col = collections.get(parts[0])
-                self.full = col.get(parts[1])
-            else:
-                raise Exception('Malformed reference value')
-        return self.full
+        # TODO this must call to persistence.load_reference
+        #  this new method must be a derived of persistence.load_references
+        #  and return the value of the reference
+        raise Exception("not implemented")
 
     def get_referenced_value(self, collections):
         """ Obtains the referenced value"""
@@ -232,7 +225,7 @@ class FieldManager():
             logging.info("FieldManager: loading field '%s' " +
                          "without class, using text.", config['name'])
         if config['class'] in self.fields:
-            field_class = self.fields[config['class']]
+            fieldclass_ = self.fields[config['class']]
         else:
             logging.error("FieldManager: loading field '%s'"
                 " with wrong class '%s'.", config['name'], config['class'])
@@ -247,4 +240,4 @@ class FieldManager():
         if 'params' in config:
             params = config['params']
         # Load the field
-        return field_class(config['name'], multivalue, params)
+        return fieldclass_(config['name'], multivalue, params)

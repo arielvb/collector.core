@@ -9,11 +9,11 @@ Each element of a collection is a file.
 """
 
 
-class FileInterface(object):
+class File(object):
     """Marker for each item that must be a File"""
 
 
-class File(FileInterface):
+class FileDict(File):
     """File is a group of fields"""
 
     def __init__(self, fields):
@@ -34,7 +34,7 @@ class File(FileInterface):
             setattr(self, field[0], field[1])
 
 
-class FileAlchemy(FileInterface):
+class FileAlchemy(File):
     """File is a group of fields"""
 
     schema = None

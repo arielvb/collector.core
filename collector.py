@@ -109,7 +109,7 @@ class Collector(object):
     def quick_search(self, term, collection):
         """Returns the results of the quick search for term in
          the selected collection"""
-        man = self.manager['collection'].get(collection)
+        man = self.managers['collection'].get(collection)
         return man.serch(term)
 
 

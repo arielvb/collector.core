@@ -3,8 +3,8 @@
 
 from abc import ABCMeta, abstractmethod
 import copy
-from storage import PickleStorage, JSONStorage
-from file import File
+from storage import JSONStorage
+from file import FileDict
 
 
 class Persistence(object):
@@ -98,7 +98,7 @@ class PersistenceDict(Persistence):
         objects = []
         result.reverse()
         for item in result:
-            objects.append(File(item))
+            objects.append(FileDict(item))
         return objects
 
     def get(self, _id):
@@ -107,7 +107,7 @@ class PersistenceDict(Persistence):
             _id = int(_id)
         for item in self.items:
             if _id == item['id']:
-                return File(item)
+                return FileDict(item)
         return None
 
     def get_all(self, start_at, limit):
@@ -120,7 +120,7 @@ class PersistenceDict(Persistence):
         else:
             objects = self.items[start_at:(start_at + limit)]
         for item in objects:
-            result.append(File(item))
+            result.append(FileDict(item))
         return result
 
     def search(self, term):
@@ -128,7 +128,7 @@ class PersistenceDict(Persistence):
         term = term.lower()
         for item in self.items:
             if item['title'].lower().find(term) != -1:
-                results.append(File(item))
+                results.append(FileDict(item))
         return results
 
     def save(self, values):
@@ -161,30 +161,26 @@ class PersistenceDict(Persistence):
         if 'refLoaded' in item:
             return
 
-        fields = self.schema.fields
-        for fieldId in fields:
-            field = fields[fieldId]
-            if field['class'] == 'ref':
-                config = field['params']['ref'].split('.')
-                # TODO how to control if the references of the item aren't yet loaded
-                if len(config) == 2:
-                    refCollection = collections.getCollection(config[0])
-                    refAttr = config[1]
-                    if not self.schema.isMultivalue(fieldId):
-                        ref = item[fieldId]
-                        refItem = refCollection.get(ref)
-                        if refItem is not None:
-                            item[fieldId] = refItem[refAttr]
-                    else:
-                        _list = item[fieldId]
-                        for i in range(0, len(_list)):
-                            if _list[i] != '':
-                                ref = _list[i]
-                                refItem = refCollection.get(ref)
-                                if refItem is not None:
-                                    _list[i] = refItem[refAttr]
-                                # else:
-                                    # _list[i] = u'Error: Unknown value'
+        fields = self.schema.file
+        for field in fields.values():
+            id_ = field.get_id()
+            if field.class_ == 'ref':
+                ref_collection = collections.get_collection(field.ref_collection)
+                if not field.is_multivalue():
+                    ref = item[id_]
+                    ref_item = ref_collection.get(ref)
+                    if ref_item is not None:
+                        item[id_] = ref_item[field.ref_field]
+                else:
+                    _list = item[id_]
+                    for i in range(0, len(_list)):
+                        if _list[i] != '':
+                            ref = _list[i]
+                            ref_item = ref_collection.get(ref)
+                            if ref_item is not None:
+                                _list[i] = ref_item[field.ref_field]
+                            # else:
+                                # _list[i] = u'Error: Unknown value'
         item['refLoaded'] = True
         return item
 
@@ -209,6 +205,7 @@ class PersistenceManager(object):
 
     @staticmethod
     def load_schema(path, collection, readonly):
+        """Returns an schema represented as a python dict"""
         return JSONStorage(path, collection, readonly).load()
 
     def get_storage(self, schema, storage,

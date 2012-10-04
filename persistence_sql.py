@@ -62,7 +62,7 @@ def multivalue_table_init(self, k):
 
 class PersistenceAlchemy(Persistence):
 
-    """docstring for PersistenceAlchemy"""
+    """PersistenceAlchemy"""
     def __init__(self, schema, path, params=None):
         super(PersistenceAlchemy, self).__init__(
             schema,
@@ -78,7 +78,7 @@ class PersistenceAlchemy(Persistence):
         self._assoc = []
 
         attributes = self.get_columns(schema)
-        self._class = type(str(schema.collection + "_" + schema.id),
+        self.class_ = type(str(schema.collection + "_" + schema.id),
                          (FileAlchemy, self.man.Base), attributes)
         # TODO (important) for each field that is multivalue whe must
         # create a new class, and the attribute must be a foreing key!
@@ -111,9 +111,9 @@ class PersistenceAlchemy(Persistence):
         for field in schema.file.values():
             id_ = field.get_id()
             value = Column(String)
-            if field._class == 'int':
+            if field.class_ == 'int':
                 value = Column(Integer)
-            elif field._class == 'ref':
+            elif field.class_ == 'ref':
                 value = Column(Integer,
                              ForeignKey(field.ref_collection + '.id'))
             if field.is_multivalue():
@@ -133,7 +133,7 @@ class PersistenceAlchemy(Persistence):
                 columns[id_ + 'relation'] = relationship(ref_table)
                 columna = association_proxy(id_ + 'relation', 'value')
             else:
-                if field._class == 'ref':
+                if field.class_ == 'ref':
                     if field.is_multivalue():
                         raise Exception("Multivalue ref is not supported by SQL")
                     # assoc_table = str(schema.id + '_' + id_)
@@ -170,7 +170,7 @@ class PersistenceAlchemy(Persistence):
                     #             field.ref_collection + '_id'    ,
                     #             creator = lambda value: ref_table())
                 else:
-                    # if field._class in ['int', 'text' or 'image']
+                    # if field.class_ in ['int', 'text' or 'image']
                     columna = value
             columns[id_] = columna
         # TODO clean debug line
@@ -178,29 +178,29 @@ class PersistenceAlchemy(Persistence):
         return columns
 
     def get(self, _id):
-        return self._session.query(self._class).get(_id)
+        return self._session.query(self.class_).get(_id)
 
     def get_last(self, count):
-        return self._session.query(self._class).limit(count)
+        return self._session.query(self.class_).limit(count)
 
     def get_all(self, start_at, limit):
         # TODO
-        return self._session.query(self._class).all()
+        return self._session.query(self.class_).all()
 
     def search(self, term):
-        return self._session.query(self._class).filter(
-            getattr(self._class, self.schema.default).contains(term)
+        return self._session.query(self.class_).filter(
+            getattr(self.class_, self.schema.default).contains(term)
             ).all()
 
     def save(self, values):
         # TODO fixme, value must not be a dictionary must be a File
-        obj = self._class(values)
+        obj = self.class_(values)
         if 'id' not in values:
             self._session.add(obj)
             self._session.commit()
             values['id'] = obj.id
         else:
-            obj = self._session.query(self._class).get(values['id'])
+            obj = self._session.query(self.class_).get(values['id'])
             obj.update(values)
             self._session.commit()
         return obj
@@ -214,7 +214,7 @@ class PersistenceAlchemy(Persistence):
         fields = self.schema.file
         for field in fields.values():
             id_ = field.get_id()
-            if field._class == 'ref':
+            if field.class_ == 'ref':
                 ref = getattr(item, id_ + '_relation')
                 if ref is not None:
                     out[id_] = getattr(ref, field.ref_field)

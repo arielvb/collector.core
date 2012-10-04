@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Schema is the way of repressent a collection"""
 from fields import FieldManager
 
 
@@ -21,20 +22,23 @@ class Schema(object):
         self._raw = params
         self.default = None
         if isinstance(params, dict):
-            self.loadFromDict(params)
+            self.read_params(params)
 
     def add_field(self, field):
+        """Adds a field to the schema"""
         self.file[field.get_id()] = field
         if self.default is None:
             self.default = field.get_id()
 
-    def get_field(self, name):
-        return self.file[name]
+    def get_field(self, identifier):
+        """Rerturns the field with the requested identifier"""
+        return self.file[identifier]
 
     def get_fields(self):
+        """Returns all the fields"""
         return self.fields
 
-    def loadFromDict(self, config):
+    def read_params(self, config):
         """Loads schema values from a python dictionary"""
         self.name = config['name']
         fields = config['fields']
@@ -49,7 +53,7 @@ class Schema(object):
             for item in config['order']:
                 if item in self.fields:
                     self.order.append(item)
-            # TODO what happens if one field key is not in the order values?
+            # what happens if one field key is not in the order values?
             if len(self.order) != len(fields):
                 raise Exception('Order must define all the fields')
         else:
@@ -63,8 +67,3 @@ class Schema(object):
         if 'image' in config:
             self.image = config['image']
 
-    def isMultivalue(self, field):
-        if 'multiple' in self.fields[field]:
-            return self.fields[field]['multiple']
-        else:
-            return False
