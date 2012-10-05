@@ -220,6 +220,8 @@ class PersistenceAlchemy(Persistence):
                     out[id_] = getattr(ref, field.ref_field)
                 else:
                     out[id_] = ''
+            elif field.is_multivalue():
+                out[id_] = item[id_].copy()
             else:
                 out[id_] = item[id_]
 

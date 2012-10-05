@@ -26,6 +26,9 @@ class FileDict(File):
     def __getitem__(self, key):
         return getattr(self, key, '')
 
+    def __contains__(self, key):
+        return hasattr(self, key)
+
     def __iter__(self):
         return iter(self.__dict__)
 
@@ -48,6 +51,9 @@ class FileAlchemy(File):
 
     def __getitem__(self, key):
         return getattr(self, key, '')
+
+    def __contains__(self, key):
+        return hasattr(self, key)
 
     def __iter__(self):
         return iter(self.__dict__)
