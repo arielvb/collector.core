@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# from collection import CollectionManager
 """
 Fields
 ------
@@ -113,6 +112,26 @@ class FieldInt(Field):
         return "Integer"
 
 
+class FieldFloat(Field):
+    """Custom field where the only accepted value are float"""
+    class_ = 'float'
+
+    def set_value(self, value):
+        """Overrides the default method to cast the values *float*"""
+        if isinstance(value, list):
+            value = [float(val) for val in value]
+        else:
+            value = long(value)
+        super(FieldFloat, self).set_value(value)
+
+    def add_value(self, values):
+        """Checks if a value is *long* before add it"""
+        float_list = [float(value) for value in values]
+        super(FieldFloat, self).set_value(float_list)
+
+    def get_pretty_type(self):
+        return "Float"
+
 from urlparse import urlparse
 import os
 from config import Config
@@ -172,8 +191,8 @@ class FieldRef(Field):
 
     def get_referenced_value(self, collections):
         """ Obtains the referenced value"""
-        self.full = self.get_fullfield(collections)
-        return self.full[self.ref_field]
+        full = self.get_fullfield(collections)
+        return full[self.ref_field]
 
     def get_pretty_type(self):
         return "Reference"
@@ -197,7 +216,7 @@ class FieldManager():
         if FieldManager._instance is not None:
             raise Exception("Called more that once")
         self.fields = {'text': FieldText, 'image': FieldImage,
-                       'int': FieldInt, 'ref': FieldRef}
+                       'int': FieldInt, 'ref': FieldRef, 'float': FieldFloat}
 
     @staticmethod
     def get_instance():
@@ -241,3 +260,4 @@ class FieldManager():
             params = config['params']
         # Load the field
         return fieldclass_(config['name'], multivalue, params)
+

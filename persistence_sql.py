@@ -8,10 +8,9 @@ from file import FileAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy import Column, Integer, String, Sequence, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
-import copy
 import os
 
 
@@ -135,7 +134,8 @@ class PersistenceAlchemy(Persistence):
             else:
                 if field.class_ == 'ref':
                     if field.is_multivalue():
-                        raise Exception("Multivalue ref is not supported by SQL")
+                        raise Exception("Multivalue ref is "
+                            "not supported by SQL")
                     # assoc_table = str(schema.id + '_' + id_)
                     # ref_table = type(assoc_table,
                     #       (self.man.Base,), {
@@ -156,8 +156,8 @@ class PersistenceAlchemy(Persistence):
                     # without backref: [boardgames] * ---> 1 [designers]
                     # with backref [boardgames] * <---> 1 [designers]
                     columna = value
-                    columns[id_ + '_relation'] = relationship(schema.collection +
-                        "_" + field.ref_collection,
+                    rel = schema.collection + "_" + field.ref_collection
+                    columns[id_ + '_relation'] = relationship(rel,
                         primaryjoin="%s.%s==%s.id" %
                              (class_prefix + schema.id,
                               id_,

@@ -2,7 +2,10 @@
 # pylint: disable-msg=W0603
 # W0603: Using the global statement
 """
-Config Class
+Configuration
+-------------
+
+This module calculates/recover the settings of Collector.
 """
 
 import os
@@ -18,8 +21,7 @@ FILEPATH = os.path.dirname(__file__)
 
 def rebuild_constants():
     """Returns constants to the default value"""
-    global CONFIG_DIR_MODE, PLAT, ISWINDOWS, ISOSX, FILEPATH
-    CONFIG_DIR_MODE = 0700
+    global PLAT, ISWINDOWS, ISOSX, FILEPATH
     PLAT = sys.platform.lower()
 
     ISWINDOWS = 'win32' in PLAT or 'win64' in PLAT
@@ -29,13 +31,37 @@ def rebuild_constants():
 
 
 class Config(object):
-    """Config allows consult the application paths and other settings"""
+    """Config is the main class for this module; initialize the values with
+     the default configuration, allows query/edit or save it's state."""
 
     _instance = None
     OSX = 1
     WINDOWS = 2
     OTHER = 3
     DIR_MODE = 0700
+
+    # Settings description
+    param_definition = {
+        'build_user_dir': "Build the user data directory",
+        'plugins_enabled': "List of plugins enabled",
+        'home': "The application data directory, could be a path or:" +
+                " ':auto:', ':resources:'",
+        'lang': """The application language must be locale_COUNTRY
+                    or ':system:'.
+                    Examples:
+                        en_UK for English (United Kingdom)
+                        ca_ES for catalan
+                        es_ES for spanish
+                """,
+    }
+
+    # Default settings
+    _default = {
+        'build_user_dir': True,
+        'plugins_enabled': [],
+        'home': ':auto:',
+        'lang': ':system:',
+    }
 
     def __init__(self, platform=None):
         """ Constructor for Config, initialize all the attributes"""
@@ -47,11 +73,34 @@ class Config(object):
         elif platform not in [Config.OSX, Config.WINDOWS, Config.OTHER]:
             raise Exception("Platform identifier %s not found" % platform)
         self.platform = platform
-        self.config_dir = Config.calculate_data_path(platform)
         self.resources = self.get_resources_path()
-        self.config_dir = self.get_appdata_path()  # TODO remove me!
+        #self.config_dir = Config.calculate_data_path(platform)
+        #self.config_dir = self.get_appdata_path()  # TODO remove me!
+        # Parse all the parameters
+        self._settings = []
+        self.set_settings(None)
 
         #os.read(os.path.join(self.path, 'resources/config/ui.json'))
+
+    def set_settings(self, params):
+        """Loads the parameters overriding the defaults"""
+        # import ipdb; ipdb.set_trace( )
+        settings = self._default.copy()
+        if params is not None:
+            if not isinstance(params, dict):
+                raise ValueError("Params must be a dict")
+            for defined in self.param_definition.keys():
+                if defined in params:
+                    settings[defined] = params[defined]
+        self._settings = self.translate_values(settings)
+
+    def translate_values(self, settings):
+        """Translates special values to the real values"""
+        if settings['home'] == ':auto:':
+            settings['home'] = Config.calculate_data_path(self.platform)
+        elif settings['home'] == ':resources:':
+            settings['home'] = self.get_appdata_path()
+        return settings
 
     @staticmethod
     def get_instance():
@@ -80,12 +129,14 @@ class Config(object):
         return os.path.join(self.resources, 'data')
 
     def get_data_path(self):
-        """Returns the user data path"""
-        return self.config_dir
+        """Returns the user data path (home)"""
+        return self._settings['home']
+
+    get_home = get_data_path
 
     def get_plugin_path(self):
         """Returns the user plugin path"""
-        return os.path.join(self.config_dir, 'plugins')
+        return os.path.join(self._settings['home'], 'plugins')
 
     @staticmethod
     def get_current_os(platform=None):
@@ -125,7 +176,7 @@ class Config(object):
         """Creates the content inside the user data directory"""
         subfolders = ['user_plugins', 'config', 'collections']
         import shutil
-        base = self.config_dir
+        base = self._settings['home']
         if not os.path.exists(base):
             os.makedirs(base, mode=Config.DIR_MODE)
             appdata = self.get_appdata_path()
@@ -135,4 +186,8 @@ class Config(object):
                 src = os.path.join(appdata, folder)
                 shutil.copytree(src, dst)
         # TODO check if some data is missing?
+
+    def conf(self, key):
+        """Returns the setting value for the requested key"""
+        return self._settings[key]
 

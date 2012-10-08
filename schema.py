@@ -13,7 +13,7 @@ class Schema(object):
         self.id = id_
         self.collection = collection
         self.name = None
-        self.fields = {}
+        # self.fields = {}
         self.file = {}
         self.order = []
         # TODO icona e imatge per defecte
@@ -42,7 +42,7 @@ class Schema(object):
         """Loads schema values from a python dictionary"""
         self.name = config['name']
         fields = config['fields']
-        self.fields = fields
+        # self.fields = fields
         self.file = {}
         manager = FieldManager.get_instance()
         for field in fields.items():
@@ -51,7 +51,7 @@ class Schema(object):
         if 'order' in config:
             self.order = []
             for item in config['order']:
-                if item in self.fields:
+                if item in self.file:
                     self.order.append(item)
             # what happens if one field key is not in the order values?
             if len(self.order) != len(fields):

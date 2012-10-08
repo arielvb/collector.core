@@ -71,12 +71,12 @@ class CollectionManager():
     _instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance(autodiscover=False):
         if CollectionManager._instance is None:
-            CollectionManager._instance = CollectionManager()
+            CollectionManager._instance = CollectionManager(autodiscover)
         return CollectionManager._instance
 
-    def __init__(self, autodiscover=True):
+    def __init__(self, autodiscover=False):
         self.persistence = ''
         self.name = ''
         self.title = ''

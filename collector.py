@@ -4,35 +4,13 @@ import os
 from config import Config
 from plugins.boardgamegeek import PluginBoardGameGeek
 from plugin import PluginManager
+from collection import CollectionManager
 
 
 class Collector(object):
     """Collector joins all the engine system to load correctly"""
 
     _instance = None
-
-    # Settings description
-    param_definition = {
-        'build_user_dir': "Build the user data directory",
-        'plugins_enabled': "List of plugins enabled",
-        'home': "The application data directory, could be a path or:" +
-                " ':auto:', ':resources:'",
-        'lang': """The application language must be locale_COUNTRY
-                    or ':system:'.
-                    Examples:
-                        en_UK for English (United Kingdom)
-                        ca_ES for catalan
-                        es_ES for spanish
-                """,
-    }
-
-    # Default settings
-    _settings = {
-        'build_user_dir': False,
-        'plugins_enabled': ['PluginHellouser', 'PluginBoardGameGeek'],
-        'home': ':auto:',
-        'lang': ':system:',
-    }
 
     managers = {}
 
@@ -41,39 +19,15 @@ class Collector(object):
             raise Exception("Called more than once")
         #else
         super(Collector, self).__init__()
-        # Parse all the parameters
-        self.parse_params(params)
-        # Boot the system
-        self.boot()
-
-    @staticmethod
-    def get_instance(params=None):
-        """ Returns the collector instance"""
-        if Collector._instance is None:
-            Collector._instance = Collector(params)
-        return Collector._instance
-
-    def parse_params(self, params):
-        """Loads the parameters overriding the defaults"""
-        if params is None:
-            return
-        if not isinstance(params, dict):
-            raise ValueError("Params must be a dict")
-        for defined in self.param_definition.keys():
-            if defined in params:
-                self._settings[defined] = params[defined]
-
-    def conf(self, key):
-        """Returns the setting value for the requested key"""
-        return self._settings[key]
-
-    def boot(self):
-        """The boot process of collector"""
         # Configuration
         config = Config.get_instance()
+        self.register_manager('config', config)
+
+        if params is not None:
+            config.set_settings(params)
+
         if self.conf('build_user_dir'):
             config.build_data_directory()
-        self.register_manager('config', config)
 
         # Plug-ins
         sys_plugin_path = config.get_appdata_path()
@@ -87,6 +41,20 @@ class Collector(object):
             sys_plugins,
             paths=[sys_plugin_path])
         self.register_manager('plugin', plugin_manager)
+        self.register_manager('collection',
+             CollectionManager.get_instance(True))
+
+    @staticmethod
+    def get_instance(params=None):
+        """ Returns the collector instance"""
+        if Collector._instance is None:
+            Collector._instance = Collector(params)
+        return Collector._instance
+
+    def conf(self, key):
+        """Returns the setting value for the requested key, this is a proxy
+        method to the manager Config"""
+        return self.managers['config'].conf(key)
 
     def register_manager(self, key, manager):
         """Registers a new manager"""
@@ -109,8 +77,8 @@ class Collector(object):
     def quick_search(self, term, collection):
         """Returns the results of the quick search for term in
          the selected collection"""
-        man = self.managers['collection'].get(collection)
-        return man.serch(term)
+        man = self.managers['collection'].get_collection(collection)
+        return man.query(term)
 
 
 if __name__ == '__main__':
