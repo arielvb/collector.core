@@ -173,7 +173,7 @@ class PersistenceAlchemy(Persistence):
 
     def get_all(self, start_at, limit):
         if limit == 0:
-            return self._session.query(self.class_).offset(start_at)
+            return self._session.query(self.class_).offset(start_at).all()
         else:
             return (self._session.query(self.class_).offset(start_at)
                     .limit(limit))
