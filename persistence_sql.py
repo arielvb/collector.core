@@ -15,6 +15,8 @@ import os
 
 
 class Alchemy(object):
+    """ Alchemy connects the PersistenceAlchemy with the sessions
+     of SQLAlchemy"""
 
     _instance = None
     echo = False
@@ -27,7 +29,7 @@ class Alchemy(object):
         self.engine = {}
         self.session = {}
         self.classes = {}
-        self.Base = declarative_base()
+        self.base = declarative_base()
 
     @staticmethod
     def destroy():
@@ -36,11 +38,13 @@ class Alchemy(object):
 
     @staticmethod
     def get_instance():
+        """Returns the alchemy instance"""
         if Alchemy._instance is None:
             Alchemy._instance = Alchemy()
         return Alchemy._instance
 
     def get_engine(self, key):
+        """Rertuns the sqlalchemy engine, for the requested DB"""
         if not key in self.engine:
             self.engine[key] = create_engine('sqlite:///' + key,
              connect_args={'check_same_thread': False},
@@ -48,6 +52,7 @@ class Alchemy(object):
         return self.engine[key]
 
     def get_session(self, key):
+        """Returns the session for the requested DB"""
         if not key in self.engine:
             raise Exception("key not found")
         if not key in self.session:
@@ -55,7 +60,8 @@ class Alchemy(object):
         return self.session[key]
 
 
-def multivalue_table_init(self, k):
+def _multivalue_table_init(self, k):
+    """__init__ for the multivalue association table"""
     self.value = k
 
 
@@ -78,11 +84,11 @@ class PersistenceAlchemy(Persistence):
 
         attributes = self.get_columns(schema)
         self.class_ = type(str(schema.collection + "_" + schema.id),
-                         (FileAlchemy, self.man.Base), attributes)
+                         (FileAlchemy, self.man.base), attributes)
         self._session = self.man.get_session(file_path)
 
     def all_created(self):
-        self.man.Base.metadata.create_all(self.engine)
+        self.man.base.metadata.create_all(self.engine)
 
     def next_id(self):
         """Returns the new id to insert in the table"""
@@ -93,6 +99,8 @@ class PersistenceAlchemy(Persistence):
         return max_id + 1
 
     def get_columns(self, schema):
+        """Generates the columns and subclasses needed to build
+         the schema table"""
         columns = {}
         # Extra fields
         columns['__tablename__'] = schema.id
@@ -135,7 +143,7 @@ class PersistenceAlchemy(Persistence):
                     schema.id + '_id': Column(Integer,
                          ForeignKey(schema.id + '.id')),
                     'value': value,
-                    '__init__': multivalue_table_init
+                    '__init__': _multivalue_table_init
                     }
                 if field.class_ == 'ref':
                     # Reference fields are a bit special
@@ -148,7 +156,7 @@ class PersistenceAlchemy(Persistence):
                                   class_prefix + field.ref_collection),
                             )
                 ref_table = type(assoc_table,
-                      (self.man.Base,), assoc_attr)
+                      (self.man.base,), assoc_attr)
 
                 columns[id_ + '_relation'] = relationship(ref_table)
                 columna = association_proxy(id_ + '_relation', 'value')

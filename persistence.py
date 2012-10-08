@@ -155,7 +155,6 @@ class PersistenceDict(Persistence):
             self.data_storage.save(self.items)
 
     def load_references(self, collections, item):
-        #TODO this code needs use the Field Abstract Class
         #TODO group reference values for a faster load
         item = copy.deepcopy(item)
         if 'refLoaded' in item:
@@ -165,7 +164,9 @@ class PersistenceDict(Persistence):
         for field in fields.values():
             id_ = field.get_id()
             if field.class_ == 'ref':
-                ref_collection = collections.get_collection(field.ref_collection)
+                ref_collection = collections.get_collection(
+                    field.ref_collection
+                )
                 if not field.is_multivalue():
                     ref = item[id_]
                     ref_item = ref_collection.get(ref)
@@ -208,13 +209,9 @@ class PersistenceManager(object):
         """Returns an schema represented as a python dict"""
         return JSONStorage(path, collection, readonly).load()
 
-    def get_storage(self, schema, storage,
-                   path, params=None):
+    def get_storage(self, schema, storage, path, params=None):
         """Returns the persistence class that matches the parameters"""
-        return self.storages[storage](
-            schema,
-            path,
-            params)
+        return self.storages[storage](schema, path, params)
 
     @staticmethod
     def get_instance():

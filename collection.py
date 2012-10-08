@@ -66,12 +66,14 @@ class Collection(object):
 #  the discover method will go inside collector.Collector
 
 class CollectionManager():
-
+    """The manager for collections"""
     collections = {}
     _instance = None
 
     @staticmethod
     def get_instance(autodiscover=False):
+        """Retuns the instance of the collector, if the instance doesn'try:
+            exists creates a new one with the autodiscover value"""
         if CollectionManager._instance is None:
             CollectionManager._instance = CollectionManager(autodiscover)
         return CollectionManager._instance
@@ -93,6 +95,7 @@ class CollectionManager():
             self.collections = {}
 
     def discover_collections(self, path):
+        """Looks in the choosed path for new collections"""
         allfiles = []
         collections = {}
         try:
@@ -134,20 +137,27 @@ class CollectionManager():
         return collections
 
     def get_author(self):
+        """Returns the author of the Collection"""
         return self.author
 
     def get_title(self):
+        """Returns the title of the Collection"""
         return self.title
 
     def get_persistence(self):
+        """Returns the persistence system of the Collection"""
         return self.persistence
 
     def get_description(self):
+        """Returns the description of the Collection"""
         return self.description
 
-    def get_collection(self, collectionName):
-        return self.collections[collectionName]
+    def get_collection(self, id_):
+        """Returns a Collection/Subcollection"""
+        return self.collections[id_]
 
     @staticmethod
     def is_collection_folder(item):
+        """Checks that the item (path) is a Collection folder"""
+        # TODO this must check more things
         return os.path.isdir(item)

@@ -13,7 +13,6 @@ class Schema(object):
         self.id = id_
         self.collection = collection
         self.name = None
-        # self.fields = {}
         self.file = {}
         self.order = []
         # TODO icona e imatge per defecte
@@ -42,7 +41,6 @@ class Schema(object):
         """Loads schema values from a python dictionary"""
         self.name = config['name']
         fields = config['fields']
-        # self.fields = fields
         self.file = {}
         manager = FieldManager.get_instance()
         for field in fields.items():

@@ -8,15 +8,18 @@ Each element of a collection is a file.
     This module name has the same name as the builtin function *file*.
 """
 
-
 class File(object):
     """Marker for each item that must be a File"""
+
+    def update(self, fields):
+        """Updates the file with the new values"""
 
 
 class FileDict(File):
     """File is a group of fields"""
 
     def __init__(self, fields):
+        super(FileDict, self).__init__()
         for field in fields.items():
             setattr(self, field[0], field[1])
 
@@ -43,6 +46,7 @@ class FileAlchemy(File):
     schema = None
 
     def __init__(self, fields):
+        super(FileAlchemy, self).__init__()
         for field in fields.items():
             self.__fieldset__(field[0], field[1])
 
@@ -65,7 +69,9 @@ class FileAlchemy(File):
             if override:
                 attr.clear()
             if isinstance(value, list):
-                [attr.append(i) for i in value]
+                # Because no extend exists in attr (sqlalchemy list)
+                for i in value:
+                    attr.append(i)
             else:
                 attr.append(value)
         else:
