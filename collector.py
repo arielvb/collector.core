@@ -14,7 +14,7 @@ class Collector(object):
 
     managers = {}
 
-    def __init__(self, params=None):
+    def __init__(self, home=None):
         if Collector._instance is not None:
             raise Exception("Called more than once")
         #else
@@ -22,10 +22,8 @@ class Collector(object):
         # Configuration
         config = Config.get_instance()
         self.register_manager('config', config)
-
-        if params is not None:
-            config.set_settings(params)
-            # config.save()
+        if home is not None:
+            config.set_home(home)
 
         if self.conf('build_user_dir'):
             config.build_data_directory()

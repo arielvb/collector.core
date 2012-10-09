@@ -144,6 +144,12 @@ class Config(object):
             value = self.get_appdata_path()
         return value
 
+    def set_home(self, home):
+        """Sets the home folder"""
+        self._settings['home'] = home
+        self.storage = JSONStorage(self.get_home(), 'settings')
+        self.reload()
+
     get_data_path = get_home
 
     def get_plugin_path(self):

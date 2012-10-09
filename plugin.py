@@ -96,7 +96,7 @@ class PluginManager(object):
          plugins.
         Don't call directly to the constructor use
           PluginManager.get_instance()
-        The arguments of the constructor, all optionals:
+        The arguments of the constructor, all optional:
          *enabled* a list of all the enabled plugins by default
          *plugins* a dictionary of plugins {id: Plugin} that are preloaded
          *paths* a list of paths to look for plugins"""
@@ -159,13 +159,18 @@ class PluginManager(object):
                     #TODO log this!
                     pass
 
+    def is_enabled(self, _id):
+        """Checks if the plugin *_id* is enabled and if it was returns True"""
+        return _id in self.enabled
+
     def get(self, _id):
         """Returns the plugin with identifier _id"""
         return self.plugins[_id]
 
-    def is_enabled(self, _id):
-        """Checks if the plugin *_id* is enabled and if it was returns True"""
-        return _id in self.enabled
+    def filter(self, subclass):
+        """Returns all the plugins that implements the subclass"""
+        return [i for i in self.enabled
+                if isinstance(self.plugins[i], subclass)]
 
     def get_enabled(self):
         """Returns a list of all the enabled plug-ins"""
