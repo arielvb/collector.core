@@ -10,6 +10,8 @@ This module calculates/recover the settings of Collector.
 
 import os
 import sys
+from storage import JSONStorage
+import logging
 
 PLAT = sys.platform.lower()
 
@@ -74,17 +76,13 @@ class Config(object):
             raise Exception("Platform identifier %s not found" % platform)
         self.platform = platform
         self.resources = self.get_resources_path()
-        #self.config_dir = Config.calculate_data_path(platform)
-        #self.config_dir = self.get_appdata_path()  # TODO remove me!
         # Parse all the parameters
         self._settings = []
+        self.storage = None
         self.set_settings(None)
-
-        #os.read(os.path.join(self.path, 'resources/config/ui.json'))
 
     def set_settings(self, params):
         """Loads the parameters overriding the defaults"""
-        # import ipdb; ipdb.set_trace( )
         settings = self._default.copy()
         if params is not None:
             if not isinstance(params, dict):
@@ -92,15 +90,24 @@ class Config(object):
             for defined in self.param_definition.keys():
                 if defined in params:
                     settings[defined] = params[defined]
-        self._settings = self.translate_values(settings)
+                    logging.debug('Set configuration key ' + defined + ' to ' +
+                        str(params[defined]))
+        self._settings = settings
+        self.storage = JSONStorage(self.get_home(), 'settings')
 
-    def translate_values(self, settings):
-        """Translates special values to the real values"""
-        if settings['home'] == ':auto:':
-            settings['home'] = Config.calculate_data_path(self.platform)
-        elif settings['home'] == ':resources:':
-            settings['home'] = self.get_appdata_path()
-        return settings
+    def get_settings(self):
+        """Returns the settings"""
+        return self._settings
+
+    def save(self):
+        """Persistences call, stores all the data at disc"""
+        if self.storage is not None:
+            self.storage.save(self._settings)
+
+    def reload(self):
+        """Reloads the stored configuration (if exists)"""
+        if self.storage is not None:
+            self.set_settings(self.storage.load())
 
     @staticmethod
     def get_instance():
@@ -128,15 +135,20 @@ class Config(object):
          application"""
         return os.path.join(self.resources, 'data')
 
-    def get_data_path(self):
+    def get_home(self):
         """Returns the user data path (home)"""
-        return self._settings['home']
+        value = self._settings['home']
+        if value == ':auto:':
+            value = Config.calculate_data_path(self.platform)
+        elif value == ':resources:':
+            value = self.get_appdata_path()
+        return value
 
-    get_home = get_data_path
+    get_data_path = get_home
 
     def get_plugin_path(self):
         """Returns the user plugin path"""
-        return os.path.join(self._settings['home'], 'plugins')
+        return os.path.join(self.get_home(), 'plugins')
 
     @staticmethod
     def get_current_os(platform=None):
@@ -176,7 +188,7 @@ class Config(object):
         """Creates the content inside the user data directory"""
         subfolders = ['user_plugins', 'config', 'collections']
         import shutil
-        base = self._settings['home']
+        base = self.get_home()
         if not os.path.exists(base):
             os.makedirs(base, mode=Config.DIR_MODE)
             appdata = self.get_appdata_path()
@@ -189,5 +201,12 @@ class Config(object):
 
     def conf(self, key):
         """Returns the setting value for the requested key"""
-        return self._settings[key]
+        if key != 'home':
+            return self._settings[key]
+        else:
+            return self.get_home()
+
+    def set(self, key, value):
+        """Overrides a value of the settings or creates a new one"""
+        self._settings[key] = value
 

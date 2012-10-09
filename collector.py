@@ -25,6 +25,7 @@ class Collector(object):
 
         if params is not None:
             config.set_settings(params)
+            # config.save()
 
         if self.conf('build_user_dir'):
             config.build_data_directory()

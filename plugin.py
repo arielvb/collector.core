@@ -7,6 +7,7 @@ import glob
 import os
 import sys
 import logging
+from config import Config
 
 
 class Plugin(object):
@@ -197,3 +198,9 @@ class PluginManager(object):
     def register_plugin(self, plugin):
         """Add to the available plug-ins the plug-in received as argument"""
         self.plugins[plugin.get_id()] = plugin
+
+    def save(self):
+        """Save the enabled plugins using config"""
+        config = Config.get_instance()
+        config.set('plugins_enabled', self.get_enabled())
+        config.save()
