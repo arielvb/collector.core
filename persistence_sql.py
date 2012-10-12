@@ -195,6 +195,12 @@ class PersistenceAlchemy(Persistence):
             self._session.commit()
         return obj
 
+    def delete(self, id_):
+        obj = self._session.query(self.class_).get(id_)
+        if not obj is None:
+            self._session.delete(obj)
+            self._session.commit()
+
     def load_references(self, collections, item):
         """Loads all the referenced values using sqlalchemy relations"""
         if 'refLoaded' in item:

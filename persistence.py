@@ -23,6 +23,10 @@ class Persistence(object):
         self.params = params
 
     @abstractmethod
+    def delete(self, _id):
+        """Deletes the entry whit identifier *_id*"""
+
+    @abstractmethod
     def get(self, _id):
         """Returns the entry whit identifier *id*"""
 
@@ -143,7 +147,6 @@ class PersistenceDict(Persistence):
         self.commit()
 
     def delete(self, _id):
-        """Deletes the entry whit identifier *_id*"""
         for item in self.items:
             if item['id'] == _id:
                 self.items.remove(item)
