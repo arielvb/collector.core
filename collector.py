@@ -4,7 +4,7 @@ import os
 from config import Config
 from plugins.boardgamegeek import PluginBoardGameGeek
 from plugin import PluginManager
-from collection import CollectionManager
+from collection import Collection
 
 
 class Collector(object):
@@ -41,7 +41,7 @@ class Collector(object):
             paths=[sys_plugin_path])
         self.register_manager('plugin', plugin_manager)
         self.register_manager('collection',
-             CollectionManager.get_instance(True))
+             Collection.get_instance(True))
 
     @staticmethod
     def get_instance(params=None):

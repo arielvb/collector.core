@@ -207,7 +207,7 @@ class PersistenceManager(object):
     @staticmethod
     def load_schema(path, collection, readonly):
         """Returns an schema represented as a python dict"""
-        return JSONStorage(path, collection, readonly).load()
+        return JSONStorage(path, collection, readonly)
 
     def get_storage(self, schema, storage, path, params=None):
         """Returns the persistence class that matches the parameters"""

@@ -7,31 +7,30 @@ from config import Config
 import logging
 import os
 
-#TODO this must be the Folder Class
 
-class Collection(object):
-    """Collection class"""
+class Folder(object):
+    """Folder class"""
 
     def __init__(self, id_, schema, persistence):
-        super(Collection, self).__init__()
+        super(Folder, self).__init__()
         self.id_ = id_
         self.schema = schema
         self.persistence = persistence
 
     def get_id(self):
-        """Returns the identifier of the collection"""
+        """Returns the identifier of the folder"""
         return self.id_
 
     def get_name(self):
-        """Returns the name of the collection"""
+        """Returns the name of the folder"""
         return self.schema.name
 
     def get_image(self):
-        """Returns the path of the representative image of the collection"""
+        """Returns the path of the representative image of the folder"""
         return self.schema.image
 
     def get_last(self, limit=10):
-        """ Finds last items created at the collection."""
+        """ Finds last items created at the folder."""
         return self.persistence.get_last(limit)
 
     def get(self, id_):
@@ -59,34 +58,41 @@ class Collection(object):
 
     def load_references(self, item):
         """Returns a copy of the object with all the references loaded"""
-        man = CollectionManager.get_instance()
+        man = Collection.get_instance()
         return self.persistence.load_references(man, item)
 
-# TODO this must be the Collection class, but is not singleton and the
-#  the discover method will go inside collector.Collector
 
-class CollectionManager():
-    """The manager for collections"""
+class Collection():
+    """A collection is a group of Folders and some proper"""
     collections = {}
+    # TODO Collection is not singleton and discover, is_collection...
+    #  methods will go inside collector.Collector
     _instance = None
 
     @staticmethod
     def get_instance(autodiscover=False):
         """Retuns the instance of the collector, if the instance doesn'try:
             exists creates a new one with the autodiscover value"""
-        if CollectionManager._instance is None:
-            CollectionManager._instance = CollectionManager(autodiscover)
-        return CollectionManager._instance
+        if Collection._instance is None:
+            Collection._instance = Collection(autodiscover)
+        return Collection._instance
+
+    @staticmethod
+    def is_collection_folder(item):
+        """Checks that the item (path) is a Collection folder"""
+        # TODO this must check more things
+        return os.path.isdir(item)
 
     def __init__(self, autodiscover=False):
-        self.persistence = ''
+        self.storage = None
         self.name = ''
         self.title = ''
         self.author = ''
         self.description = ''
-        if CollectionManager._instance is not None:
+        self._raw = {}
+        if Collection._instance is not None:
             raise Exception('Called more than once')
-        CollectionManager._instance = self
+        Collection._instance = self
         config = Config.get_instance()
         path = os.path.join(config.get_data_path(), 'collections')
         if autodiscover:
@@ -106,10 +112,11 @@ class CollectionManager():
         pers_man = PersistenceManager.get_instance()
         for item in allfiles:
             c_path = os.path.join(path, item)
-            if CollectionManager.is_collection_folder(c_path):
-                #TODO remove readonly argument
-                raw = PersistenceManager.load_schema(c_path, item,
-                                                     readonly=True)
+            if Collection.is_collection_folder(c_path):
+                self.storage = PersistenceManager.load_schema(c_path, item,
+                                                     readonly=False)
+                self._raw = self.storage.load()
+                raw = self._raw
                 persistence = raw['persistence']
                 self.author = raw['author']
                 self.title = raw['name']
@@ -122,7 +129,7 @@ class CollectionManager():
                                                   self.persistence,
                                                   c_path
                                                   )
-                    collection = Collection(
+                    collection = Folder(
                         id_,
                         file_,
                         storage)
@@ -156,8 +163,33 @@ class CollectionManager():
         """Returns a Collection/Subcollection"""
         return self.collections[id_]
 
-    @staticmethod
-    def is_collection_folder(item):
-        """Checks that the item (path) is a Collection folder"""
-        # TODO this must check more things
-        return os.path.isdir(item)
+    def set_title(self, title):
+        """Sets the collection title"""
+        self.title = title
+
+    def set_author(self, author):
+        """Sets the collection author"""
+        self._raw['author'] = author
+        self.author = author
+
+    def set_description(self, description):
+        """Sets the collection description"""
+        self.description = description
+
+    def set_properties(self, values):
+        """Sets the properties of the collection, firts parameter is a
+         dictionary and the allowed keys are:
+            :title:    title of the  collection
+            :author:  author of the collection
+            :description: description of the collection
+        All the keys are optional
+        """
+        for i in values.items():
+            if hasattr(self, 'set_' + i[0]):
+                getattr(self, 'set_' + i[0])(i[1])
+        self.commit()
+
+    def commit(self):
+        """Stores persistenctly if a Storage has been defined"""
+        if self.storage is not None:
+            self.storage.save(self._raw)
