@@ -33,10 +33,6 @@ class Schema(object):
         """Rerturns the field with the requested identifier"""
         return self.file[identifier]
 
-    def get_fields(self):
-        """Returns all the fields"""
-        return self.fields
-
     def read_params(self, config):
         """Loads schema values from a python dictionary"""
         self.name = config['name']
@@ -64,4 +60,3 @@ class Schema(object):
             self.ico = config['ico']
         if 'image' in config:
             self.image = config['image']
-

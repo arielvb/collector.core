@@ -144,10 +144,11 @@ class FieldImage(Field):
 
     def get_value(self):
         image = self.value
-        uri = urlparse(self.value)
-        if uri.scheme == 'collector' and uri.netloc == 'collections':
-            image = os.path.join(Config.get_instance().get_data_path(),
-                                 uri.netloc, os.path.normpath(uri.path[1:]))
+        if not image is None:
+            uri = urlparse(self.value)
+            if uri.scheme == 'collector' and uri.netloc == 'collections':
+                image = os.path.join(Config.get_instance().get_home(),
+                                     uri.netloc, os.path.normpath(uri.path[1:]))
         return image
 
     def get_path(self):

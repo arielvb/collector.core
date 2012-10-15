@@ -27,6 +27,10 @@ class Persistence(object):
         """Deletes the entry whit identifier *_id*"""
 
     @abstractmethod
+    def filter(self, filters):
+        """Applies a set of filters before retrieve the data"""
+
+    @abstractmethod
     def get(self, _id):
         """Returns the entry whit identifier *id*"""
 
@@ -93,6 +97,10 @@ class PersistenceDict(Persistence):
         for i in self.items:
             maxid = max(maxid, i['id'])
         self._autoid = maxid + 1
+
+    def filter(self, fitlers):
+        # TODO
+        raise Exception("Not Implemented")
 
     def get_last(self, count):
         """Returns the last items created, the number of items are defined

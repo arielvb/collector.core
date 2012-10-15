@@ -5,6 +5,7 @@
 
 from persistence import Persistence
 from file import FileAlchemy
+from engine.filter import Filter
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -12,6 +13,18 @@ from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
 import os
+
+
+class FilterEquals(Filter):
+    """The equivalence filter"""
+
+    @staticmethod
+    def get_id():
+        return 'equals'
+
+    @staticmethod
+    def get_name():
+        return "An equivalence relationship"
 
 
 class Alchemy(object):
@@ -29,7 +42,11 @@ class Alchemy(object):
         self.engine = {}
         self.session = {}
         self.classes = {}
+        self.filters = self._create_filters()
         self.base = declarative_base()
+
+    def _create_filters(self):
+        """Creates the default avaible filters for SQLAlchemy"""
 
     @staticmethod
     def destroy():
@@ -97,6 +114,19 @@ class PersistenceAlchemy(Persistence):
         if max_id is None:
             max_id = 1
         return max_id + 1
+
+    def filter(self, filters):
+        query = self.build_filter_query(filters)
+        return self._session.query(self.class_).filter(query).all()
+
+    def build_filter_query(self, filters):
+        query = None
+        for i in filters:
+            if i == 'equals':
+                left = filters[i][0]
+                right = filters[i][1]
+                query = getattr(self.class_, left) == right
+        return query
 
     def get_columns(self, schema):
         """Generates the columns and subclasses needed to build
@@ -205,7 +235,7 @@ class PersistenceAlchemy(Persistence):
         """Loads all the referenced values using sqlalchemy relations"""
         if 'refLoaded' in item:
             return
-        out = {}
+        out = {'id': item['id']}
         fields = self.schema.file
         for field in fields.values():
             id_ = field.get_id()

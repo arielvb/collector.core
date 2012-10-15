@@ -61,6 +61,11 @@ class Folder(object):
         man = Collection.get_instance()
         return self.persistence.load_references(man, item)
 
+    def filter(self, filters):
+        if not isinstance(filters, dict):
+            raise ValueError("Filter must be a dictionary")
+        return self.persistence.filter(filters)
+
 
 class Collection():
     """A collection is a group of Folders and some proper"""
@@ -85,10 +90,6 @@ class Collection():
 
     def __init__(self, autodiscover=False):
         self.storage = None
-        self.name = ''
-        self.title = ''
-        self.author = ''
-        self.description = ''
         self._raw = {}
         if Collection._instance is not None:
             raise Exception('Called more than once')
@@ -96,11 +97,11 @@ class Collection():
         config = Config.get_instance()
         path = os.path.join(config.get_data_path(), 'collections')
         if autodiscover:
-            self.collections = self.discover_collections(path)
+            self.collections = self.load_collections(path)
         else:
             self.collections = {}
 
-    def discover_collections(self, path):
+    def load_collections(self, path):
         """Looks in the choosed path for new collections"""
         allfiles = []
         collections = {}
@@ -118,15 +119,11 @@ class Collection():
                 self._raw = self.storage.load()
                 raw = self._raw
                 persistence = raw['persistence']
-                self.author = raw['author']
-                self.title = raw['name']
-                self.description = raw['description']
-                self.persistence = persistence['storage']
                 schemas = raw['schemas']
                 for id_ in schemas:
                     file_ = Schema(item, id_, schemas[id_])
                     storage = pers_man.get_storage(file_,
-                                                  self.persistence,
+                                                  persistence['storage'],
                                                   c_path
                                                   )
                     collection = Folder(
@@ -143,38 +140,25 @@ class Collection():
                 #     pass
         return collections
 
-    def get_author(self):
-        """Returns the author of the Collection"""
-        return self.author
-
-    def get_title(self):
-        """Returns the title of the Collection"""
-        return self.title
-
     def get_persistence(self):
         """Returns the persistence system of the Collection"""
-        return self.persistence
+        return self._raw['persistence']['storage']
 
-    def get_description(self):
-        """Returns the description of the Collection"""
-        return self.description
+    def get_properties(self):
+        """Rerturns all the properties"""
+        return self._raw
+
+    def get_property(self, key):
+        """Returns a property of the collection"""
+        return self._raw[key]
 
     def get_collection(self, id_):
         """Returns a Collection/Subcollection"""
         return self.collections[id_]
 
-    def set_title(self, title):
-        """Sets the collection title"""
-        self.title = title
-
-    def set_author(self, author):
-        """Sets the collection author"""
-        self._raw['author'] = author
-        self.author = author
-
-    def set_description(self, description):
-        """Sets the collection description"""
-        self.description = description
+    def get_mapping(self, key):
+        """Returns the mapping for the requested key"""
+        return self._raw['mappings'][key]
 
     def set_properties(self, values):
         """Sets the properties of the collection, firts parameter is a
@@ -184,9 +168,10 @@ class Collection():
             :description: description of the collection
         All the keys are optional
         """
+        valid_properties = ['title', 'description', 'author']
         for i in values.items():
-            if hasattr(self, 'set_' + i[0]):
-                getattr(self, 'set_' + i[0])(i[1])
+            if i[0] in valid_properties:
+                self._raw[i[0]] = i[1]
         self.commit()
 
     def commit(self):
