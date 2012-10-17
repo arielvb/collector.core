@@ -23,8 +23,48 @@ class FilterEquals(Filter):
         return 'equals'
 
     @staticmethod
-    def get_name():
+    def get_description():
         return "An equivalence relationship"
+
+    @staticmethod
+    def get_name():
+        return "="
+
+    @staticmethod
+    def filter(params):
+        """Builds the query filter"""
+        if not isinstance(params, list) or len(params) != 3:
+            raise ValueError()
+        left = params[1]
+        right = params[2]
+        query = getattr(params[0], left) == right
+        return query
+
+
+class FilterLike(Filter):
+    """The like filter"""
+
+    @staticmethod
+    def get_id():
+        return 'like'
+
+    @staticmethod
+    def get_description():
+        return "Looks if a text is containet into another"
+
+    @staticmethod
+    def get_name():
+        return "contains"
+
+    @staticmethod
+    def filter(params):
+        """Builds the query filter"""
+        if not isinstance(params, list) or len(params) != 3:
+            raise ValueError()
+        left = params[1]
+        right = params[2]
+        query = getattr(params[0], left).contains(right)
+        return query
 
 
 class Alchemy(object):
@@ -45,8 +85,17 @@ class Alchemy(object):
         self.filters = self._create_filters()
         self.base = declarative_base()
 
-    def _create_filters(self):
+    @classmethod
+    def _create_filters(cls):
         """Creates the default avaible filters for SQLAlchemy"""
+        filters = {}
+        for i in [FilterEquals, FilterLike]:
+            filters[i.get_id()] = i()
+        # i = FilterEquals()
+        # filters[i.get_id()] = i
+        # i = FilterLike()
+        # filters[i.get_id()] = i
+        return filters
 
     @staticmethod
     def destroy():
@@ -75,6 +124,10 @@ class Alchemy(object):
         if not key in self.session:
             self.session[key] = sessionmaker(bind=self.engine[key])()
         return self.session[key]
+
+    def get_filter(self, key):
+        """Returns the requested filter"""
+        return self.filters[key]
 
 
 def _multivalue_table_init(self, k):
@@ -120,12 +173,17 @@ class PersistenceAlchemy(Persistence):
         return self._session.query(self.class_).filter(query).all()
 
     def build_filter_query(self, filters):
+        """Builds a query filter"""
         query = None
+        alchemy = Alchemy.get_instance()
         for i in filters:
-            if i == 'equals':
-                left = filters[i][0]
-                right = filters[i][1]
-                query = getattr(self.class_, left) == right
+            if i in alchemy.filters and i in ['equals', 'like']:
+                params = [self.class_]
+                params.extend(filters[i])
+                query = alchemy.get_filter(i).filter(
+                    params
+                )
+            # TODO iterate over all and join them with an "and"
         return query
 
     def get_columns(self, schema):

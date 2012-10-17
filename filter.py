@@ -18,6 +18,17 @@ class Filter(object):
     def get_name():
         """Returns the human friendly name of the filter"""
 
+    @staticmethod
+    @abstractmethod
+    def get_description():
+        """Returns the description of the filter"""
+
+    @staticmethod
+    @abstractmethod
+    def get_filter(params):
+        """Returns the filter query"""
+        # TODO maybe is better **kargs
+
 
 class FilterUnion(Filter):
     """Base class for filter union"""
