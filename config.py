@@ -55,6 +55,11 @@ class Config(object):
                         ca_ES for catalan
                         es_ES for spanish
                 """,
+        'copy': """Copy files to the collection folder policy:
+                        never     never copy files
+                        always    copy all the files
+                        remote    only network files
+                """,
     }
 
     # Default settings
@@ -63,6 +68,7 @@ class Config(object):
         'plugins_enabled': [],
         'home': ':auto:',
         'lang': ':system:',
+        'copy': 'never',
     }
 
     def __init__(self, platform=None):
@@ -81,6 +87,21 @@ class Config(object):
         self.storage = None
         self.set_settings(None)
 
+    def save(self):
+        """Persistences call, stores all the data at disc"""
+        if self.storage is not None:
+            self.storage.save(self._settings)
+
+    def set(self, key, value):
+        """Overrides a value of the settings or creates a new one"""
+        self._settings[key] = value
+
+    def set_home(self, home):
+        """Sets the home folder"""
+        self._settings['home'] = home
+        self.storage = JSONStorage(self.get_home(), 'settings')
+        self.reload()
+
     def set_settings(self, params):
         """Loads the parameters overriding the defaults"""
         settings = self._default.copy()
@@ -98,11 +119,6 @@ class Config(object):
     def get_settings(self):
         """Returns the settings"""
         return self._settings
-
-    def save(self):
-        """Persistences call, stores all the data at disc"""
-        if self.storage is not None:
-            self.storage.save(self._settings)
 
     def reload(self):
         """Reloads the stored configuration (if exists)"""
@@ -143,12 +159,6 @@ class Config(object):
         elif value == ':resources:':
             value = self.get_appdata_path()
         return value
-
-    def set_home(self, home):
-        """Sets the home folder"""
-        self._settings['home'] = home
-        self.storage = JSONStorage(self.get_home(), 'settings')
-        self.reload()
 
     get_data_path = get_home
 
@@ -211,8 +221,3 @@ class Config(object):
             return self._settings[key]
         else:
             return self.get_home()
-
-    def set(self, key, value):
-        """Overrides a value of the settings or creates a new one"""
-        self._settings[key] = value
-
