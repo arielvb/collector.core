@@ -6,7 +6,7 @@
 from persistence import Persistence
 from file import FileAlchemy
 from engine.filter import Filter
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
@@ -256,15 +256,18 @@ class PersistenceAlchemy(Persistence):
     def get(self, _id):
         return self._session.query(self.class_).get(_id)
 
-    def get_last(self, count):
-        return self._session.query(self.class_).limit(count)
-
     def get_all(self, start_at, limit):
         if limit == 0:
             return self._session.query(self.class_).offset(start_at).all()
         else:
             return (self._session.query(self.class_).offset(start_at)
                     .limit(limit))
+
+    def get_filters(self):
+        return Alchemy.get_instance().filters
+
+    def get_last(self, count):
+        return self._session.query(self.class_).order_by(desc(self.class_.id)).limit(count)
 
     def search(self, term):
         return self._session.query(self.class_).filter(
