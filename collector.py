@@ -119,7 +119,12 @@ class Collector(object):
                 del data[key]
 
         # Create the reduced and remaped data
-        collection.save(data)
+        return collection.save(data)
+
+    def filter(self, collection, filter_):
+        """Returns the collection files after apply a filter"""
+        collection = self.managers['collection'].get_collection(collection)
+        return collection.filter(filter_)
 
     @classmethod
     def to_multivalue(cls, data):

@@ -44,10 +44,6 @@ class Folder(object):
         # TODO validate startAt and limit are integers
         return self.persistence.get_all(start_at, limit)
 
-    def query(self, term):
-        """Search over the file for entrys that match the term"""
-        return self.persistence.search(term)
-
     def save(self, obj):
         """Save the objet adding it to the file"""
         return self.persistence.save(obj)
@@ -150,7 +146,7 @@ class Collection():
 
     def get_property(self, key):
         """Returns a property of the collection"""
-        return self._raw[key]
+        return self._raw.get(key, None)
 
     def get_collection(self, id_):
         """Returns a Collection/Subcollection"""
@@ -168,7 +164,7 @@ class Collection():
             :description: description of the collection
         All the keys are optional
         """
-        valid_properties = ['title', 'description', 'author']
+        valid_properties = ['title', 'description', 'author', 'dashboard']
         for i in values.items():
             if i[0] in valid_properties:
                 self._raw[i[0]] = i[1]

@@ -40,6 +40,10 @@ class Persistence(object):
          *limit*"""
 
     @abstractmethod
+    def get_filters(self):
+        """Returns all the avaible filters"""
+
+    @abstractmethod
     def get_last(self, count):
         """Returns the last inserted items, maximum *count*"""
 
@@ -57,6 +61,8 @@ class Persistence(object):
 
     def all_created(self):
         """Hook: called when all the files of the collection has been loaded"""
+
+
 
 
 class PersistenceDict(Persistence):
@@ -101,6 +107,10 @@ class PersistenceDict(Persistence):
     def filter(self, fitlers):
         # TODO
         raise Exception("Not Implemented")
+
+    def get_filters(self):
+        #TODO 
+        return []
 
     def get_last(self, count):
         """Returns the last items created, the number of items are defined
