@@ -50,8 +50,8 @@ class UrlProvider(Provider):
     def _query_engine(self, param):
         query = self.query
         if (param):
-            param = urllib.quote_plus(param)
-            query = query % param
+            param = urllib.quote_plus(param.encode('utf-8'))
+            query = query % str(param)
         logging.debug("Provider: loading url %s", query)
         results = urllib2.urlopen(query, timeout=TIMEOUT)
         html = results.read()
