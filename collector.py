@@ -3,6 +3,7 @@
 import os
 from config import Config
 from plugins.boardgamegeek import PluginBoardGameGeek
+from persistence import PersistenceManager
 from plugin import PluginManager
 from collection import Collection
 import logging
@@ -121,6 +122,30 @@ class Collector(object):
         # Create the reduced and remaped data
         return collection.save(data)
 
+    def complete(self, collection, id_, data, force=False):
+        """Completes empty fields with the non empty keys from the new data.
+        If the requested file doesn't exists raises a ValueError Exception.
+        If force is set to True, overrides all the keys and not only the
+        empties."""
+        collection = self.managers.get['collection'].get(collection)
+        fil = collection.get(id_)
+        if fil is None:
+            raise ValueError("File identifier not valid")
+        for key, item in collection.schema.file.items():
+            if item.is_multivalue():
+                continue
+            # Check if some field exists or is empty
+            complete = False
+            if key in data:
+                if not key in fil:
+                    complete = True
+                else:
+                    item.set_value(fil[key])
+                    complete = item.empty() or force
+            if complete:
+                fil[key] = data[key]
+        return collection.save(fil)
+
     def filter(self, collection, filter_):
         """Returns the collection files after apply a filter"""
         collection = self.managers['collection'].get_collection(collection)
@@ -164,6 +189,12 @@ class Collector(object):
             if i[0] in data:
                 newdata[i[1]] = data[i[0]]
         return newdata
+
+
+def get_manager(name):
+    """Returns a collector manager"""
+    return Collector.get_instance().get_manager(name)
+
 
 if __name__ == '__main__':
     Collector()

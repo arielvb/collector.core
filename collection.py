@@ -44,6 +44,7 @@ class Folder(object):
         # TODO validate startAt and limit are integers
         return self.persistence.get_all(start_at, limit)
 
+
     def save(self, obj):
         """Save the objet adding it to the file"""
         return self.persistence.save(obj)
@@ -97,6 +98,7 @@ class Collection():
         else:
             self.collections = {}
 
+    #TODO this method needs to be in the FrontController (aka. Collector)
     def load_collections(self, path):
         """Looks in the choosed path for new collections"""
         allfiles = []
@@ -153,7 +155,8 @@ class Collection():
         return self.collections[id_]
 
     def get_mapping(self, key):
-        """Returns the mapping for the requested key"""
+        """Returns the mapping for the requested key, is a shortcut to
+         get_property('mappings')[key]"""
         return self._raw['mappings'][key]
 
     def set_properties(self, values):

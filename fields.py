@@ -82,6 +82,13 @@ class Field(object):
     def get_pretty_type(self):
         """Returns the pretty name of the class_ of field"""
 
+    def empty(self):
+        """Checks if the field doesn't have any value"""
+        if self.is_multivalue():
+            return self.value is not None and self.value != []
+        else:
+            return self.value is not None or self.value is not ''
+
 
 class FieldText(Field):
     """A field whit type text"""

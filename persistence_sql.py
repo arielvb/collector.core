@@ -2,9 +2,9 @@
 """PersistenceAlchemy allows Collector to store the data using SQLAlchemy"""
 
 # Take a look to dictionary collections p.95 true page: 109
-
+from collector import get_manager
 from persistence import Persistence
-from file import FileAlchemy
+from file import File
 from engine.filter import Filter
 from sqlalchemy import create_engine, desc
 from sqlalchemy.ext.declarative import declarative_base
@@ -13,7 +13,6 @@ from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
 import os
-
 
 class FilterEquals(Filter):
     """The equivalence filter"""
@@ -65,6 +64,74 @@ class FilterLike(Filter):
         right = params[2]
         query = getattr(params[0], left).contains(right)
         return query
+
+class FileAlchemy(File):
+    """File is a group of fields"""
+
+    schema = None
+
+    def __init__(self, fields):
+        super(FileAlchemy, self).__init__()
+        for field in fields.items():
+            self.__fieldset__(field[0], field[1])
+
+    def __setitem__(self, key, value):
+        self.__fieldset__(key, value, True)
+
+    def __getitem__(self, key):
+        return getattr(self, key, '')
+
+    def __contains__(self, key):
+        return hasattr(self, key)
+
+    def __iter__(self):
+        return iter(self.__dict__)
+
+    def __fieldset__(self, key, value, override=False):
+        if (key in self.schema.file and
+            self.schema.get_field(key).is_multivalue()):
+            attr = getattr(self, key)
+            if override:
+                attr.clear()
+            if isinstance(value, list):
+                # Because no extend exists in attr (sqlalchemy list)
+                for i in value:
+                    attr.append(i)
+            else:
+                attr.append(value)
+        else:
+            setattr(self, key, value)
+
+    def update(self, fields):
+        for field in fields.items():
+            self.__fieldset__(field[0], field[1], True)
+
+    def copy(self):
+        item = self
+        out = {'id': item['id']}
+        fields = self.schema.file
+        for field in fields.values():
+            id_ = field.get_id()
+            if field.class_ == 'ref':
+                if not field.is_multivalue():
+                    ref = getattr(item, id_ + '_relation')
+                    if ref is not None:
+                        out[id_] = getattr(ref, field.ref_field)
+                    else:
+                        out[id_] = ''
+                    del ref
+                else:
+                    refs = getattr(item, id_ + '_relation')
+                    out[id_] = []
+                    for i in refs:
+                        ref = getattr(i, 'ref')
+                        out[id_].append(getattr(ref, field.ref_field))
+
+            elif field.is_multivalue():
+                out[id_] = item[id_].copy()
+            else:
+                out[id_] = item[id_]
+        return out
 
 
 class Alchemy(object):
@@ -267,7 +334,9 @@ class PersistenceAlchemy(Persistence):
         return Alchemy.get_instance().filters
 
     def get_last(self, count):
-        return self._session.query(self.class_).order_by(desc(self.class_.id)).limit(count)
+        return self._session.query(self.class_).order_by(
+                desc(self.class_.id)
+            ).limit(count)
 
     def search(self, term):
         return self._session.query(self.class_).filter(
@@ -294,31 +363,8 @@ class PersistenceAlchemy(Persistence):
 
     def load_references(self, collections, item):
         """Loads all the referenced values using sqlalchemy relations"""
-        if 'refLoaded' in item:
+        if '_refLoaded' in item:
             return
-        out = {'id': item['id']}
-        fields = self.schema.file
-        for field in fields.values():
-            id_ = field.get_id()
-            if field.class_ == 'ref':
-                if not field.is_multivalue():
-                    ref = getattr(item, id_ + '_relation')
-                    if ref is not None:
-                        out[id_] = getattr(ref, field.ref_field)
-                    else:
-                        out[id_] = ''
-                    del ref
-                else:
-                    refs = getattr(item, id_ + '_relation')
-                    out[id_] = []
-                    for i in refs:
-                        ref = getattr(i, 'ref')
-                        out[id_].append(getattr(ref, field.ref_field))
-
-            elif field.is_multivalue():
-                out[id_] = item[id_].copy()
-            else:
-                out[id_] = item[id_]
-
-        out['refLoaded'] = True
+        out = item.copy()
+        out['_refLoaded'] = True
         return out

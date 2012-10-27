@@ -6,7 +6,6 @@ import copy
 from storage import JSONStorage
 from file import FileDict
 
-
 class Persistence(object):
     """Abstract class for Persitence"""
 
@@ -61,8 +60,6 @@ class Persistence(object):
 
     def all_created(self):
         """Hook: called when all the files of the collection has been loaded"""
-
-
 
 
 class PersistenceDict(Persistence):
@@ -177,32 +174,9 @@ class PersistenceDict(Persistence):
 
     def load_references(self, collections, item):
         #TODO group reference values for a faster load
-        item = copy.deepcopy(item)
         if 'refLoaded' in item:
             return
-
-        fields = self.schema.file
-        for field in fields.values():
-            id_ = field.get_id()
-            if field.class_ == 'ref':
-                ref_collection = collections.get_collection(
-                    field.ref_collection
-                )
-                if not field.is_multivalue():
-                    ref = item[id_]
-                    ref_item = ref_collection.get(ref)
-                    if ref_item is not None:
-                        item[id_] = ref_item[field.ref_field]
-                else:
-                    _list = item[id_]
-                    for i in range(0, len(_list)):
-                        if _list[i] != '':
-                            ref = _list[i]
-                            ref_item = ref_collection.get(ref)
-                            if ref_item is not None:
-                                _list[i] = ref_item[field.ref_field]
-                            # else:
-                                # _list[i] = u'Error: Unknown value'
+        item = item.copy()
         item['refLoaded'] = True
         return item
 
