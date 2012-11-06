@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
 import os
 
+
 class FilterEquals(Filter):
     """The equivalence filter"""
 
@@ -64,6 +65,7 @@ class FilterLike(Filter):
         right = params[2]
         query = getattr(params[0], left).contains(right)
         return query
+
 
 class FileAlchemy(File):
     """File is a group of fields"""
@@ -125,7 +127,8 @@ class FileAlchemy(File):
                     out[id_] = []
                     for i in refs:
                         ref = getattr(i, 'ref')
-                        out[id_].append(getattr(ref, field.ref_field))
+                        if hasattr(ref, field.ref_field):
+                            out[id_].append(getattr(ref, field.ref_field))
 
             elif field.is_multivalue():
                 out[id_] = item[id_].copy()
@@ -280,12 +283,14 @@ class PersistenceAlchemy(Persistence):
                 # without backref: [boardgames] * ---> 1 [designers]
                 # with backref [boardgames] * <---> 1 [designers]
                 rel = schema.collection + "_" + field.ref_collection
+                # Note: delete-orphan isn't supported for many-one many-many
                 columns[id_ + '_relation'] = relationship(rel,
                     primaryjoin="%s.%s==%s.id" %
                          (class_prefix + schema.id,
                           id_,
                           class_prefix + field.ref_collection),
-                    backref=schema.id + ' ' + id_
+                    backref=schema.id + ' ' + id_,
+                    cascade="delete"
                     )
             if field.is_multivalue():
                 # One to many
@@ -309,6 +314,9 @@ class PersistenceAlchemy(Persistence):
                                  (assoc_table,
                                   'value',
                                   class_prefix + field.ref_collection),
+                            # TODO test backref
+                            backref=schema.id + "_" + id_,
+                            cascade="delete"
                             )
                 ref_table = type(assoc_table,
                       (self.man.base,), assoc_attr)
@@ -344,6 +352,12 @@ class PersistenceAlchemy(Persistence):
             ).all()
 
     def save(self, values):
+        if isinstance(values, self.class_):
+            self._session.commit()
+            return values
+        elif not isinstance(values, dict):
+            raise ValueError("Expected dict")
+
         obj = self.class_(values)
         if 'id' not in values:
             self._session.add(obj)
