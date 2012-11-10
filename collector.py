@@ -1,16 +1,29 @@
 # -*- coding: utf-8 -*-
-"""The main core is Collector"""
-import os
+"""
+Collector - Frontcontroller and Helpers
+=======================================
+
+The frontcontroller puts together the pieces of the engine, offering a common
+ point of access. The frontcontroller, *Collector*, is defined as a singleton
+ class, that means you can't create more that one instance.
+
+More over offers shortcuts (methods) to acces to the more common properties, 
+ one of this shortcuts is *get_manager*
+"""
+from collection import Collection
 from config import Config
-from plugins.boardgamegeek import PluginBoardGameGeek
 from persistence import PersistenceManager
 from plugin import PluginManager
-from collection import Collection
 import logging
+import os
+
 
 
 class Collector(object):
-    """Collector joins all the engine system to load correctly"""
+    """
+    Collector is the frontcontroller to acces to all the pieces of
+     collector.engine.
+    """
 
     _instance = None
 
@@ -19,11 +32,11 @@ class Collector(object):
     def __init__(self, home=None):
         if Collector._instance is not None:
             raise Exception("Called more than once")
-        #else
+        Collector._instance = self
         super(Collector, self).__init__()
         # Configuration
         config = Config.get_instance()
-        self.register_manager('config', config)
+        self.add_manager('config', config)
         if home is not None:
             config.set_home(home)
 
@@ -35,14 +48,16 @@ class Collector(object):
         sys_plugin_path = os.path.join(sys_plugin_path, 'user_plugins')
 
         # System plug-ins
-        plugins = [PluginBoardGameGeek()]
+        from plugins import get_sys_plugins
+        plugins = get_sys_plugins()
+        # Dictionary compression is avaible for >= python 2.7
         sys_plugins = {plugin.get_id(): plugin for plugin in plugins}
         plugin_manager = PluginManager.get_instance(
             self.conf('plugins_enabled'),
             sys_plugins,
             paths=[sys_plugin_path])
-        self.register_manager('plugin', plugin_manager)
-        self.register_manager('collection',
+        self.add_manager('plugin', plugin_manager)
+        self.add_manager('collection',
              Collection.get_instance(True))
 
     @staticmethod
@@ -57,7 +72,7 @@ class Collector(object):
         method to the manager Config"""
         return self.managers['config'].conf(key)
 
-    def register_manager(self, key, manager):
+    def add_manager(self, key, manager):
         """Registers a new manager"""
         self.managers[key] = manager
 
@@ -82,8 +97,8 @@ class Collector(object):
         return collection.query(term)
 
     def add(self, data, collection_id, use_mapping):
-        """Adds the data to the collection with id *collection_id* and uses the
-         selected mapping"""
+        """Adds a new file with fields *data* to the collection with id
+         *collection_id* and uses the selected mapping"""
         man = self.managers['collection']
         mapping = man.get_mapping(use_mapping)
         collection = man.get_collection(collection_id)
@@ -127,12 +142,33 @@ class Collector(object):
         If the requested file doesn't exists raises a ValueError Exception.
         If force is set to True, overrides all the keys and not only the
         empties."""
-        collection = self.managers.get['collection'].get(collection)
+        collection = self.managers['collection'].get_collection(collection)
         fil = collection.get(id_)
         if fil is None:
             raise ValueError("File identifier not valid")
+        # TODO references value
         for key, item in collection.schema.file.items():
             if item.is_multivalue():
+                # TODO multivalue keys loop
+                # it new data has the current field
+                if key in data:
+                    # the current file couldn't have the field
+                    if not key in fil:
+                        # if the field doesn't exists -> complete
+                        complete = True
+                    values = data[key]
+                    if not isinstance(values, list):
+                        # TODO
+                        continue
+                    else:
+                        for i in values:
+                            if not i in fil[key]:
+                                if item.class_ == 'ref':
+                                    # TODO reference values
+                                    continue
+                                else:
+                                    fil[key].append(i)
+                                #fil[key].append(i)
                 continue
             # Check if some field exists or is empty
             complete = False
@@ -143,6 +179,8 @@ class Collector(object):
                     item.set_value(fil[key])
                     complete = item.empty() or force
             if complete:
+                # TODO transform value int -> str
+                # str -> int or ...
                 fil[key] = data[key]
         return collection.save(fil)
 
