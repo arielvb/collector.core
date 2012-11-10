@@ -14,8 +14,6 @@ class Plugin(object):
     """Base class for all the plugins."""
     __metaclass__ = ABCMeta
 
-    _icon = None
-
     @abstractproperty
     def get_name(self):
         """Returns the name of the plugin."""
@@ -28,14 +26,10 @@ class Plugin(object):
         """Returns the identifier of the plugin."""
         return self.__class__.__name__
 
-    @property
+    @abstractproperty
     def icon(self):
         """Returns the plugin icon"""
-        return self._icon
 
-    @icon.setter
-    def set_icon(self, value):
-        self._icon = value
 
 
 class PluginRunnable(Plugin):
@@ -85,6 +79,12 @@ class PluginCollector(Plugin):
     def file_filter(self, html):
         """Looks for fields in the HTML code"""
 
+
+class PluginImporter(PluginRunnable):
+    """Marker for importer plugins"""
+
+class PluginExporter(PluginRunnable):
+    """Marker for exporter plugins"""
 
 class PluginManager(object):
     """Manager for the plugin system"""
