@@ -94,9 +94,9 @@ class PluginManager(object):
     def __init__(self, enabled=None, plugins=None, paths=None):
         """PluginManager manages the avaible, enable/disable and discover
          plugins.
-        Don't call directly to the constructor use
+        Don't call directly the constructor use:
           PluginManager.get_instance()
-        The arguments of the constructor, all optional:
+        The arguments optional arguments of the constructor are:
          *enabled* a list of all the enabled plugins by default
          *plugins* a dictionary of plugins {id: Plugin} that are preloaded
          *paths* a list of paths to look for plugins"""

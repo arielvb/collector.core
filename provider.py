@@ -21,7 +21,8 @@ class Provider(object):
         self.results = None
 
     def get(self, params):
-        """Loads the content identified whith *params*"""
+        """Loads the content identified whith *params*,
+         and caches the results"""
         if self.results is None:
             self.results = self._query_engine(params)
         return self.results
@@ -34,6 +35,10 @@ class Provider(object):
     @abstractmethod
     def _query_engine(self, params):
         """Returns the html content for the given params"""
+
+    def flush(self):
+        """Flushes the cache"""
+        self.results = None
 
 
 class UrlProvider(Provider):

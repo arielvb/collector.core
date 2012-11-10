@@ -44,7 +44,6 @@ class Folder(object):
         # TODO validate startAt and limit are integers
         return self.persistence.get_all(start_at, limit)
 
-
     def save(self, obj):
         """Save the objet adding it to the file"""
         return self.persistence.save(obj)

@@ -48,4 +48,3 @@ class FileDict(File):
     def copy(self):
         return copy.deepcopy(self.__dict__.copy())
         # return {key: value for key,value in self.__dict__.items()}
-
