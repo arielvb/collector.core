@@ -7,7 +7,7 @@ The frontcontroller puts together the pieces of the engine, offering a common
  point of access. The frontcontroller, *Collector*, is defined as a singleton
  class, that means you can't create more that one instance.
 
-More over offers shortcuts (methods) to acces to the more common properties, 
+More over offers shortcuts (methods) to acces to the more common properties,
  one of this shortcuts is *get_manager*
 """
 from collection import Collection
@@ -16,7 +16,6 @@ from persistence import PersistenceManager
 from plugin import PluginManager
 import logging
 import os
-
 
 
 class Collector(object):
@@ -58,7 +57,7 @@ class Collector(object):
             paths=[sys_plugin_path])
         self.add_manager('plugin', plugin_manager)
         self.add_manager('collection',
-             Collection.get_instance(True))
+                         Collection.get_instance(True))
 
     @staticmethod
     def get_instance(params=None):
@@ -66,6 +65,11 @@ class Collector(object):
         if Collector._instance is None:
             Collector._instance = Collector(params)
         return Collector._instance
+
+    @classmethod
+    def shutdown(cls):
+        Collector._instance = None
+        # TODO delegate shutdown
 
     def conf(self, key):
         """Returns the setting value for the requested key, this is a proxy

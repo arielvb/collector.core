@@ -31,7 +31,6 @@ class Plugin(object):
         """Returns the plugin icon"""
 
 
-
 class PluginRunnable(Plugin):
     """A plug-in that is runnable, that means that the method *run* will be
      executed when it is called or loaded if *autorun* is enabled."""
@@ -83,8 +82,10 @@ class PluginCollector(Plugin):
 class PluginImporter(PluginRunnable):
     """Marker for importer plugins"""
 
+
 class PluginExporter(PluginRunnable):
     """Marker for exporter plugins"""
+
 
 class PluginManager(object):
     """Manager for the plugin system"""
@@ -142,22 +143,21 @@ class PluginManager(object):
                     module = os.path.basename(i)[:-3]
                     classname = 'Plugin' + module.capitalize()
                     temp = __import__(module,
-                                    globals(), locals(),
+                                      globals(), locals(),
                                       fromlist=[classname])
                     class_definition = getattr(temp, classname)
                     if issubclass(class_definition, Plugin):
                         logging.info("PluginManager: discovered plug-in %s",
-                         module)
+                                     module)
                         plugin = class_definition()
                         self.register_plugin(plugin)
                         # Auto-execute plug-ins
                         if (issubclass(class_definition, PluginRunnable) and
-                            plugin.get_id() in self.enabled and
-                             plugin.autorun()):
+                                plugin.get_id() in self.enabled and
+                                plugin.autorun()):
                             plugin.run()
-                except Exception:
-                    #TODO log this!
-                    pass
+                except Exception as e:
+                    logging.exception(e)
 
     def is_enabled(self, _id):
         """Checks if the plugin *_id* is enabled and if it was returns True"""
