@@ -2,9 +2,13 @@
 """Persistence allows Collector to store the data in a persistence way"""
 
 from abc import ABCMeta, abstractmethod
-import copy
 from storage import JSONStorage
 from file import FileDict
+import logging
+import os
+import shutil
+import urllib
+import uuid
 
 class Persistence(object):
     """Abstract class for Persitence"""
@@ -20,6 +24,33 @@ class Persistence(object):
         self.collection_id = schema.collection
         self.subcollection = schema.id
         self.params = params
+
+    #@abstractmethod
+    def addfile(self, filename, mode):
+        """Persists a file, it will add to the storage if mode is always or
+         if mode is *http* will copy only http resources. Also exists a
+         *never* mode."""
+        if mode == 'never':
+            return filename
+        http = False
+        if filename.startswith('http'):
+            filename, headers = urllib.urlretrieve(filename)
+            http = True
+        if not http and mode == 'http':
+            return filename
+        dst = os.path.join(self.path, "files", str(uuid.uuid4()))
+        try:
+            folder = os.path.join(self.path, "files")
+            if not os.path.exists(folder):
+                os.mkdir(folder)
+            shutil.copyfile(filename, dst)
+            dst = dst.replace(self.path, '')
+            dst = "collector://collections/" + self.collection_id + "/" + dst
+
+        except IOError as ioex:
+            logging.exception(ioex)
+            return None
+        return dst
 
     @abstractmethod
     def delete(self, _id):
@@ -89,7 +120,9 @@ class PersistenceDict(Persistence):
                 self.subcollection,
                 self.memory)
             self.items = self.data_storage.load()
-        elif data is not None:
+            if self.items is None:
+                self.items = []
+        if data is not None:
             self.items = data
 
         self._calc_autoid()
@@ -106,7 +139,7 @@ class PersistenceDict(Persistence):
         raise Exception("Not Implemented")
 
     def get_filters(self):
-        #TODO 
+        #TODO
         return []
 
     def get_last(self, count):

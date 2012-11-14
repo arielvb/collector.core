@@ -68,13 +68,14 @@ class Config(object):
         'plugins_enabled': [],
         'home': ':auto:',
         'lang': ':system:',
-        'copy': 'never',
+        'copy': 'http',
     }
 
     def __init__(self, platform=None):
         """ Constructor for Config, initialize all the attributes"""
         if not Config._instance is None:
             raise Exception("Called more that once")
+        Config.isntance = self
         self.__file__ = FILEPATH
         if platform is None:
             platform = Config.get_current_os()
@@ -96,11 +97,12 @@ class Config(object):
         """Overrides a value of the settings or creates a new one"""
         self._settings[key] = value
 
-    def set_home(self, home):
+    def set_home(self, home, memory=False):
         """Sets the home folder"""
         self._settings['home'] = home
-        self.storage = JSONStorage(self.get_home(), 'settings')
-        self.reload()
+        if not memory:
+            self.storage = JSONStorage(self.get_home(), 'settings')
+            self.reload()
 
     def set_settings(self, params):
         """Loads the parameters overriding the defaults"""
@@ -221,3 +223,5 @@ class Config(object):
             return self._settings[key]
         else:
             return self.get_home()
+
+    get = conf

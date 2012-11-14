@@ -7,7 +7,6 @@ from config import Config
 import logging
 import os
 
-
 class Folder(object):
     """Folder class"""
 
@@ -46,6 +45,20 @@ class Folder(object):
 
     def save(self, obj):
         """Save the objet adding it to the file"""
+        copy = Config.get_instance().get('copy')
+        if copy != 'never':
+            for i in self.schema.file.values():
+                # TODO support other types of file
+                if i.class_ == "image":
+                    if i.is_multivalue():
+                        raise Exception("Multivalue for images isn't"
+                                        "supported")
+                    value = obj[i.get_id()]
+                    # TODO multivalue support for files
+                    value = self.persistence.addfile(value, copy)
+                    if value is not None:
+                        obj[i.get_id()] = value
+
         return self.persistence.save(obj)
 
     def delete(self, obj):
