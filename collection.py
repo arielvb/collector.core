@@ -71,7 +71,7 @@ class Folder(object):
         return self.persistence.load_references(man, item)
 
     def filter(self, filters):
-        if not isinstance(filters, dict):
+        if not isinstance(filters, list):
             raise ValueError("Filter must be a dictionary")
         return self.persistence.filter(filters)
 
