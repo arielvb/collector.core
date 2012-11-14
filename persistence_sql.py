@@ -2,11 +2,10 @@
 """PersistenceAlchemy allows Collector to store the data using SQLAlchemy"""
 
 # Take a look to dictionary collections p.95 true page: 109
-from collector import get_manager
 from persistence import Persistence
 from file import File
 from engine.filter import Filter
-from sqlalchemy import create_engine, desc
+from sqlalchemy import create_engine, desc, and_, or_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
@@ -15,7 +14,11 @@ from sqlalchemy.pool import StaticPool
 import os
 
 
-class FilterEquals(Filter):
+class FilterSQLAlchemy(Filter):
+    """Marker for sqlalchemy filters"""
+
+
+class FilterEquals(FilterSQLAlchemy):
     """The equivalence filter"""
 
     @staticmethod
@@ -41,7 +44,7 @@ class FilterEquals(Filter):
         return query
 
 
-class FilterLike(Filter):
+class FilterLike(FilterSQLAlchemy):
     """The like filter"""
 
     @staticmethod
@@ -246,14 +249,18 @@ class PersistenceAlchemy(Persistence):
         """Builds a query filter"""
         query = None
         alchemy = Alchemy.get_instance()
-        for i in filters:
-            if i in alchemy.filters and i in ['equals', 'like']:
-                params = [self.class_]
-                params.extend(filters[i])
-                query = alchemy.get_filter(i).filter(
-                    params
-                )
-            # TODO iterate over all and join them with an "and"
+        for filter_ in filters:
+            for i in filter_:
+                if i in alchemy.filters and i in ['equals', 'like']:
+                    params = [self.class_]
+                    params.extend(filter_[i])
+                    clause = alchemy.get_filter(i).filter(
+                        params
+                    )
+                    if query is None:
+                        query = clause
+                    else:
+                        query = and_(query, clause)
         return query
 
     def get_columns(self, schema):
