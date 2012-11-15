@@ -7,6 +7,7 @@ import urllib2
 import urllib
 from abc import ABCMeta, abstractmethod, abstractproperty
 import logging
+from cookielib import CookieJar
 
 TIMEOUT = 120
 
@@ -42,25 +43,38 @@ class Provider(object):
 
 
 class UrlProvider(Provider):
-    """Provider using urllib2, loads content by url"""
+    """Provider using urllib2 and cookielib"""
 
     def __init__(self, query):
         super(UrlProvider, self).__init__()
         self.query = query
+        self.cookie = CookieJar()
+        self.opener = urllib2.build_opener(
+            urllib2.HTTPCookieProcessor(self.cookie))
+        self.opener.addheaders = [
+            ('User-agent',
+             'Mozilla/5.0 (X11; U; Linux i686; en-US;'
+             ' rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9'
+             'Firefox/3.0.1')]
 
     @staticmethod
     def get_name():
         return "URI provider"
 
     def _query_engine(self, param):
+        query = self.make_query(param)
+        results = self.opener.open(query, timeout=TIMEOUT)
+        html = results.read()
+        return html
+
+    def make_query(self, param):
+        """Creates an url from the base query and the params"""
         query = self.query
         if (param):
             param = urllib.quote_plus(param.encode('utf-8'))
             query = query % str(param)
         logging.debug("Provider: loading url %s", query)
-        results = urllib2.urlopen(query, timeout=TIMEOUT)
-        html = results.read()
-        return html
+        return query
 
 
 class FileProvider(Provider):
