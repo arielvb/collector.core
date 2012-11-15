@@ -46,8 +46,6 @@ class Config(object):
     param_definition = {
         'build_user_dir': "Build the user data directory",
         'plugins_enabled': "List of plugins enabled",
-        'home': "The application data directory, could be a path or:" +
-                " ':auto:', ':resources:'",
         'lang': """The application language must be locale_COUNTRY
                     or ':system:'.
                     Examples:
@@ -66,7 +64,6 @@ class Config(object):
     _default = {
         'build_user_dir': True,
         'plugins_enabled': [],
-        'home': ':auto:',
         'lang': ':system:',
         'copy': 'http',
     }
@@ -83,6 +80,7 @@ class Config(object):
             raise Exception("Platform identifier %s not found" % platform)
         self.platform = platform
         self.resources = self.get_resources_path()
+        self.home = ":auto:"
         # Parse all the parameters
         self._settings = []
         self.storage = None
@@ -99,7 +97,8 @@ class Config(object):
 
     def set_home(self, home, memory=False):
         """Sets the home folder"""
-        self._settings['home'] = home
+        # self._settings['home'] = home
+        self.home = home
         if not memory:
             self.storage = JSONStorage(self.get_home(), 'settings')
             self.reload()
@@ -155,7 +154,7 @@ class Config(object):
 
     def get_home(self):
         """Returns the user data path (home)"""
-        value = self._settings['home']
+        value = self.home
         if value == ':auto:':
             value = Config.calculate_data_path(self.platform)
         elif value == ':resources:':
