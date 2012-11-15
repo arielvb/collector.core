@@ -217,7 +217,7 @@ class Collector(object):
     def _get_or_create(cls, collection, key, value):
         """Looks if exists any entry that matches key==value, if not
          it creates one"""
-        exists = collection.filter({'equals': [key, value]})
+        exists = collection.filter([{'equals': [key, value]}])
         if len(exists) == 0:
             return collection.save({key: value})
         else:
