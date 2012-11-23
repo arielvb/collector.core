@@ -36,12 +36,12 @@ class Folder(object):
         """Returns a file by id"""
         return self.persistence.get(id_)
 
-    def get_all(self, start_at=0, limit=0):
+    def get_all(self, start_at=0, limit=0, order=None):
         """ Finds all the items, optinally results could be called
             using startAt and limit, useful for pagination.
         """
         # TODO validate startAt and limit are integers
-        return self.persistence.get_all(start_at, limit)
+        return self.persistence.get_all(start_at, limit, order)
 
     def save(self, obj):
         """Save the objet adding it to the file"""

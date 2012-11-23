@@ -2,10 +2,10 @@
 """PersistenceAlchemy allows Collector to store the data using SQLAlchemy"""
 
 # Take a look to dictionary collections p.95 true page: 109
-from persistence import Persistence
+from persistence import Persistence, Order
 from file import File
 from engine.filter import Filter
-from sqlalchemy import create_engine, desc, and_, or_
+from sqlalchemy import create_engine, desc, and_, or_, asc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Sequence, ForeignKey
@@ -338,12 +338,22 @@ class PersistenceAlchemy(Persistence):
     def get(self, _id):
         return self._session.query(self.class_).get(_id)
 
-    def get_all(self, start_at, limit):
+    def get_all(self, start_at, limit, order):
+        query = self._session.query(self.class_)
+        if order is not None:
+            if not isinstance(order, Order) and not isinstance(order, unicode):
+                raise ValueError("Expected order found %s", type(order))
+            if isinstance(order, Order):
+                if order.asc:
+                    order = asc(order.fields)
+                else:
+                    order = desc(order.fields)
+            query = query.order_by(order)
+        query = query.offset(start_at)
         if limit == 0:
-            return self._session.query(self.class_).offset(start_at).all()
+            return query.all()
         else:
-            return (self._session.query(self.class_).offset(start_at)
-                    .limit(limit))
+            return query.limit(limit).all()
 
     def get_filters(self):
         return Alchemy.get_instance().filters

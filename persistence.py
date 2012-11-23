@@ -10,6 +10,16 @@ import shutil
 import urllib
 import uuid
 
+
+class Order(object):
+    """Order modifier for querys an filters"""
+
+    def __init__(self, fields, asc=True):
+        super(Order, self).__init__()
+        self.asc = asc
+        self.fields = fields
+
+
 class Persistence(object):
     """Abstract class for Persitence"""
 
@@ -65,7 +75,7 @@ class Persistence(object):
         """Returns the entry whit identifier *id*"""
 
     @abstractmethod
-    def get_all(self, start_at, limit):
+    def get_all(self, start_at, limit, order=None):
         """Returns all the entrys, allows pagination with *start_at* and
          *limit*"""
 
