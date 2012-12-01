@@ -6,7 +6,10 @@ Fields
 The fields define different types of data.
 """
 import logging
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractproperty, abstractmethod
+from urlparse import urlparse
+import os
+from config import Config
 
 
 class Field(object):
@@ -98,54 +101,48 @@ class FieldText(Field):
         return "Text"
 
 
-class FieldInt(Field):
-    """Custom field where the only accepted value are int"""
-    class_ = 'int'
+class FieldWithCast(Field):
 
     def set_value(self, value):
         """Overrides the default method to cast the values to int"""
         if value is None or value == '':
             return
         if isinstance(value, list):
-            value = [int(val) for val in value]
+            value = [self.cast(val) for val in value]
         else:
-            value = int(value)
-        super(FieldInt, self).set_value(value)
+            value = self.cast(value)
+        super(FieldWithCast, self).set_value(value)
 
     def add_value(self, values):
         """Checks if a value is int before add it"""
-        int_list = [int(value) for value in values]
-        super(FieldInt, self).set_value(int_list)
+        int_list = [self.cast(value) for value in values]
+        super(FieldWithCast, self).set_value(int_list)
+
+    @abstractmethod
+    def cast(self, value):
+        """Cast method to convert the input value"""
+
+
+class FieldInt(FieldWithCast):
+    """Custom field where the only accepted value are int"""
+    class_ = 'int'
+
+    def cast(self, value):
+        return int(value)
 
     def get_pretty_type(self):
         return "Integer"
 
 
-class FieldFloat(Field):
+class FieldFloat(FieldWithCast):
     """Custom field where the only accepted value are float"""
     class_ = 'float'
-
-    def set_value(self, value):
-        """Overrides the default method to cast the values *float*"""
-        if value is None or value == '':
-            return
-        if isinstance(value, list):
-            value = [float(val) for val in value]
-        else:
-            value = float(value)
-        super(FieldFloat, self).set_value(value)
-
-    def add_value(self, values):
-        """Checks if a value is *long* before add it"""
-        float_list = [float(value) for value in values]
-        super(FieldFloat, self).set_value(float_list)
 
     def get_pretty_type(self):
         return "Float"
 
-from urlparse import urlparse
-import os
-from config import Config
+    def cast(self, value):
+        return float(value)
 
 
 class FieldImage(Field):
