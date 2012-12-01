@@ -104,6 +104,8 @@ class FieldInt(Field):
 
     def set_value(self, value):
         """Overrides the default method to cast the values to int"""
+        if value is None or value == '':
+            return
         if isinstance(value, list):
             value = [int(val) for val in value]
         else:
@@ -125,10 +127,12 @@ class FieldFloat(Field):
 
     def set_value(self, value):
         """Overrides the default method to cast the values *float*"""
+        if value is None or value == '':
+            return
         if isinstance(value, list):
             value = [float(val) for val in value]
         else:
-            value = long(value)
+            value = float(value)
         super(FieldFloat, self).set_value(value)
 
     def add_value(self, values):
