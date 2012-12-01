@@ -7,6 +7,7 @@ from config import Config
 import logging
 import os
 
+
 class Folder(object):
     """Folder class"""
 
@@ -124,18 +125,21 @@ class Collection():
         for item in allfiles:
             c_path = os.path.join(path, item)
             if Collection.is_collection_folder(c_path):
-                self.storage = PersistenceManager.load_schema(c_path, item,
-                                                     readonly=False)
+                self.storage = PersistenceManager.load_schema(
+                    c_path,
+                    item,
+                    readonly=False)
                 self._raw = self.storage.load()
                 raw = self._raw
                 persistence = raw['persistence']
                 schemas = raw['schemas']
                 for id_ in schemas:
                     file_ = Schema(item, id_, schemas[id_])
-                    storage = pers_man.get_storage(file_,
-                                                  persistence['storage'],
-                                                  c_path
-                                                  )
+                    storage = pers_man.get_storage(
+                        file_,
+                        persistence['storage'],
+                        c_path
+                    )
                     collection = Folder(
                         id_,
                         file_,

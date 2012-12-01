@@ -62,11 +62,11 @@ class Field(object):
         is_dict = isinstance(value, dict)
         if not self.single_value and not is_list:
             raise ValueError("Field is multivalued and the" +
-                " new value isn't not a list")
+                             " new value isn't not a list")
         # TODO how to check value is a basic type?
         elif self.single_value and is_list or is_dict:
             raise ValueError("Field is not multivalued and the value" +
-                " is a list")
+                             " is a list")
         self.value = value
 
     def get_value(self):
@@ -257,9 +257,10 @@ class FieldManager():
             fieldclass_ = self.fields[config['class']]
         else:
             logging.error("FieldManager: loading field '%s'"
-                " with wrong class '%s'.", config['name'], config['class'])
+                          " with wrong class '%s'.",
+                          config['name'], config['class'])
             raise FieldClassNotFound('Field class ' + config['class'] +
-                ' not found.')
+                                     ' not found.')
         # Multivalue
         multivalue = False
         if 'multiple' in config:
@@ -270,4 +271,3 @@ class FieldManager():
             params = config['params']
         # Load the field
         return fieldclass_(config['name'], multivalue, params)
-

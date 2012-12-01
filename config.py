@@ -113,7 +113,7 @@ class Config(object):
                 if defined in params:
                     settings[defined] = params[defined]
                     logging.debug('Set configuration key ' + defined + ' to ' +
-                        str(params[defined]))
+                                  str(params[defined]))
         self._settings = settings
         self.storage = JSONStorage(self.get_home(), 'settings')
 
@@ -141,8 +141,10 @@ class Config(object):
         if getattr(sys, 'frozen', False):
             application_path = os.path.dirname(sys.executable)
             if self.platform == Config.OSX:
-                application_path = application_path.replace('MacOS',
-                 'Resources')
+                application_path = application_path.replace(
+                    'MacOS',
+                    'Resources'
+                )
         else:
             application_path = self.__file__.replace('engine', '')
         return os.path.abspath(application_path)
@@ -194,10 +196,10 @@ class Config(object):
             config_dir = os.path.join(config_dir, 'Collector')
         elif platform == Config.OSX:
             config_dir = os.path.expanduser(
-                    '~/Library/Application Support/Collector')
+                '~/Library/Application Support/Collector')
         else:
             bdir = os.path.abspath(os.path.expanduser(
-                    os.environ.get('XDG_CONFIG_HOME', '~/.config')))
+                os.environ.get('XDG_CONFIG_HOME', '~/.config')))
             config_dir = os.path.join(bdir, 'collector')
         return config_dir
 

@@ -94,7 +94,7 @@ class FileAlchemy(File):
 
     def __fieldset__(self, key, value, override=False):
         if (key in self.schema.file and
-            self.schema.get_field(key).is_multivalue()):
+                self.schema.get_field(key).is_multivalue()):
             attr = getattr(self, key)
             if override:
                 attr.clear()
@@ -185,9 +185,11 @@ class Alchemy(object):
     def get_engine(self, key):
         """Rertuns the sqlalchemy engine, for the requested DB"""
         if not key in self.engine:
-            self.engine[key] = create_engine('sqlite:///' + key,
-             connect_args={'check_same_thread': False},
-             poolclass=StaticPool, echo=Alchemy.echo)
+            self.engine[key] = create_engine(
+                'sqlite:///' + key,
+                connect_args={'check_same_thread': False},
+                poolclass=StaticPool,
+                echo=Alchemy.echo)
         return self.engine[key]
 
     def get_session(self, key):
@@ -227,7 +229,7 @@ class PersistenceAlchemy(Persistence):
 
         attributes = self.get_columns(schema)
         self.class_ = type(str(schema.collection + "_" + schema.id),
-                         (FileAlchemy, self.man.base), attributes)
+                           (FileAlchemy, self.man.base), attributes)
         self._session = self.man.get_session(file_path)
 
     def all_created(self):
@@ -236,7 +238,7 @@ class PersistenceAlchemy(Persistence):
     def next_id(self):
         """Returns the new id to insert in the table"""
         max_id = self.engine.execute("SELECT MAX(id) FROM %s;" %
-                                self.subcollection).scalar()
+                                     self.subcollection).scalar()
         if max_id is None:
             max_id = 1
         return max_id + 1
@@ -273,7 +275,7 @@ class PersistenceAlchemy(Persistence):
 
         # Note: sqlite doesn't use Sequence, its for Oracle
         columns['id'] = Column('id', Integer, Sequence('id_seq'),
-                          primary_key=True)
+                               primary_key=True)
         class_prefix = schema.collection + "_"
 
         for field in schema.file.values():
@@ -284,21 +286,24 @@ class PersistenceAlchemy(Persistence):
             elif field.class_ == 'long':
                 value = Column(Integer)
             elif field.class_ == 'ref':
-                value = Column(Integer,
-                             ForeignKey(field.ref_collection + '.id'))
+                value = Column(
+                    Integer,
+                    ForeignKey(field.ref_collection + '.id')
+                )
                 # Many to one:
                 # without backref: [boardgames] * ---> 1 [designers]
                 # with backref [boardgames] * <---> 1 [designers]
                 rel = schema.collection + "_" + field.ref_collection
                 # Note: delete-orphan isn't supported for many-one many-many
-                columns[id_ + '_relation'] = relationship(rel,
-                    primaryjoin="%s.%s==%s.id" %
-                         (class_prefix + schema.id,
-                          id_,
-                          class_prefix + field.ref_collection),
+                columns[id_ + '_relation'] = relationship(
+                    rel,
+                    primaryjoin="%s.%s==%s.id" % (
+                        class_prefix + schema.id,
+                        id_,
+                        class_prefix + field.ref_collection),
                     backref=schema.id + ' ' + id_,
                     cascade="delete"
-                    )
+                )
             if field.is_multivalue():
                 # One to many
                 #             _id
@@ -307,26 +312,28 @@ class PersistenceAlchemy(Persistence):
                 assoc_attr = {
                     '__tablename__': assoc_table,
                     'id': Column(Integer, primary_key=True),
-                    schema.id + '_id': Column(Integer,
-                         ForeignKey(schema.id + '.id')),
+                    schema.id + '_id': Column(
+                        Integer,
+                        ForeignKey(schema.id + '.id')),
                     'value': value,
                     '__init__': _multivalue_table_init
-                    }
+                }
                 if field.class_ == 'ref':
                     # Reference fields are a bit special
                     # Many to many
                     rel = schema.collection + "_" + field.ref_collection
-                    assoc_attr['ref'] = relationship(rel,
-                            primaryjoin="%s.%s==%s.id" %
-                                 (assoc_table,
-                                  'value',
-                                  class_prefix + field.ref_collection),
-                            # TODO test backref
-                            backref=schema.id + "_" + id_,
-                            cascade="delete"
-                            )
+                    assoc_attr['ref'] = relationship(
+                        rel,
+                        primaryjoin="%s.%s==%s.id" % (
+                            assoc_table,
+                            'value',
+                            class_prefix + field.ref_collection),
+                        # TODO test backref
+                        backref=schema.id + "_" + id_,
+                        cascade="delete"
+                    )
                 ref_table = type(assoc_table,
-                      (self.man.base,), assoc_attr)
+                                 (self.man.base,), assoc_attr)
 
                 columns[id_ + '_relation'] = relationship(ref_table)
                 columna = association_proxy(id_ + '_relation', 'value')
@@ -360,13 +367,13 @@ class PersistenceAlchemy(Persistence):
 
     def get_last(self, count):
         return self._session.query(self.class_).order_by(
-                desc(self.class_.id)
-            ).limit(count)
+            desc(self.class_.id)
+        ).limit(count)
 
     def search(self, term):
         return self._session.query(self.class_).filter(
             getattr(self.class_, self.schema.default).contains(term)
-            ).all()
+        ).all()
 
     def save(self, values):
         if isinstance(values, self.class_):
