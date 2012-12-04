@@ -4,7 +4,7 @@
 # Take a look to dictionary collections p.95 true page: 109
 from persistence import Persistence, Order
 from file import File
-from engine.filter import Filter
+from collector.core.filter import Filter
 from sqlalchemy import create_engine, desc, and_, or_, asc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy

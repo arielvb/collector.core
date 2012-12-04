@@ -146,7 +146,9 @@ class Config(object):
                     'Resources'
                 )
         else:
-            application_path = self.__file__.replace('engine', '')
+            application_path = self.__file__.replace(
+                os.path.join('collector', 'core'),
+                '')
         return os.path.abspath(application_path)
 
     def get_appdata_path(self):

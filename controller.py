@@ -47,7 +47,7 @@ class Collector(object):
         sys_plugin_path = os.path.join(sys_plugin_path, 'user_plugins')
 
         # System plug-ins
-        from plugins import get_sys_plugins
+        from collector.plugins import get_sys_plugins
         plugins = get_sys_plugins()
         # Dictionary compression is avaible for >= python 2.7
         sys_plugins = {plugin.get_id(): plugin for plugin in plugins}
