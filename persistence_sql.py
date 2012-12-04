@@ -340,7 +340,8 @@ class PersistenceAlchemy(Persistence):
         query = self._session.query(self.class_)
         if order is not None:
             if not isinstance(order, Order) and not isinstance(order, unicode):
-                raise ValueError("Expected order found %s", type(order))
+                raise ValueError("Expected Order or unicode found %s",
+                                 type(order))
             if isinstance(order, Order):
                 if order.asc:
                     order = asc(order.fields)
