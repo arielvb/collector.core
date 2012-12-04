@@ -216,7 +216,6 @@ class PersistenceDict(Persistence):
             self.data_storage.save(self.items)
 
     def load_references(self, collections, item):
-        #TODO group reference values for a faster load
         if 'refLoaded' in item:
             return
         item = item.copy()

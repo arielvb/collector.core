@@ -102,6 +102,32 @@ class FileAlchemy(File):
         for field in fields.items():
             self.__fieldset__(field[0], field[1], True)
 
+    def get(self, key, load_reference=True):
+        field = self.schema.get_field(key)
+        f_id = field.get_id()
+        value = self[f_id]
+        if field.class_ == 'ref':
+            if load_reference:
+                value = self._load_reference(field)
+        return value
+
+    def _load_reference(self, field):
+        """Load a referecen value"""
+        id_ = field.get_id()
+        ref = getattr(self, id_ + '_relation')
+        if not field.is_multivalue():
+            if ref is not None:
+                out = getattr(ref, field.ref_field)
+            else:
+                out = ''
+        else:
+            out = []
+            for i in ref:
+                ref = getattr(i, 'ref')
+                if hasattr(ref, field.ref_field):
+                    out.append(getattr(ref, field.ref_field))
+        return out
+
     def copy(self):
         item = self
         out = {'id': item['id']}
@@ -109,21 +135,21 @@ class FileAlchemy(File):
         for field in fields.values():
             id_ = field.get_id()
             if field.class_ == 'ref':
-                if not field.is_multivalue():
-                    ref = getattr(item, id_ + '_relation')
-                    if ref is not None:
-                        out[id_] = getattr(ref, field.ref_field)
-                    else:
-                        out[id_] = ''
-                    del ref
-                else:
-                    refs = getattr(item, id_ + '_relation')
-                    out[id_] = []
-                    for i in refs:
-                        ref = getattr(i, 'ref')
-                        if hasattr(ref, field.ref_field):
-                            out[id_].append(getattr(ref, field.ref_field))
-
+                # if not field.is_multivalue():
+                #     ref = getattr(item, id_ + '_relation')
+                #     if ref is not None:
+                #         out[id_] = getattr(ref, field.ref_field)
+                #     else:
+                #         out[id_] = ''
+                #     del ref
+                # else:
+                #     refs = getattr(item, id_ + '_relation')
+                #     out[id_] = []
+                #     for i in refs:
+                #         ref = getattr(i, 'ref')
+                #         if hasattr(ref, field.ref_field):
+                #             out[id_].append(getattr(ref, field.ref_field))
+                out[id_] = self._load_reference(field,)
             elif field.is_multivalue():
                 out[id_] = item[id_].copy()
             else:

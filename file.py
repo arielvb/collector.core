@@ -14,6 +14,12 @@ class File(object):
     """Marker for each item that must be a File. Be carefull this class isn't
      abstract (abc) to avoid errors with sqlalchemy."""
 
+    def get(self, field, load_reference=True):
+        """Returns the value for the requested field, if the field is a
+         reference returns the referenced value by default, this can be
+         modified with the *load_reference* parameter.
+        """
+
     def update(self, fields):
         """Updates the file with the new values"""
 
@@ -45,6 +51,8 @@ class FileDict(File):
         for field in fields.items():
             setattr(self, field[0], field[1])
 
+    def get(self, field, load_reference=True):
+        return self[field]
+
     def copy(self):
         return copy.deepcopy(self.__dict__.copy())
-        # return {key: value for key,value in self.__dict__.items()}
