@@ -83,15 +83,6 @@ class FileAlchemy(File):
     def __setitem__(self, key, value):
         self.__fieldset__(key, value, True)
 
-    def __getitem__(self, key):
-        return getattr(self, key, '')
-
-    def __contains__(self, key):
-        return hasattr(self, key)
-
-    def __iter__(self):
-        return iter(self.__dict__)
-
     def __fieldset__(self, key, value, override=False):
         if (key in self.schema.file and
                 self.schema.get_field(key).is_multivalue()):

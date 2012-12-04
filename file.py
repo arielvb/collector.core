@@ -20,6 +20,15 @@ class File(object):
     def copy(self):
         """Returns a copy of the field as a python dictionary"""
 
+    def __getitem__(self, key):
+        return getattr(self, key, '')
+
+    def __contains__(self, key):
+        return hasattr(self, key)
+
+    def __iter__(self):
+        return iter(self.__dict__)
+
 
 class FileDict(File):
     """File is a group of fields"""
@@ -31,15 +40,6 @@ class FileDict(File):
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
-
-    def __getitem__(self, key):
-        return getattr(self, key, '')
-
-    def __contains__(self, key):
-        return hasattr(self, key)
-
-    def __iter__(self):
-        return iter(self.__dict__)
 
     def update(self, fields):
         for field in fields.items():
