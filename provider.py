@@ -8,6 +8,8 @@ import urllib
 from abc import ABCMeta, abstractmethod, abstractproperty
 import logging
 from cookielib import CookieJar
+from StringIO import StringIO
+import gzip
 
 TIMEOUT = 120
 
@@ -55,7 +57,8 @@ class UrlProvider(Provider):
             ('User-agent',
              'Mozilla/5.0 (X11; U; Linux i686; en-US;'
              ' rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9'
-             'Firefox/3.0.1')]
+             'Firefox/3.0.1'),
+            ('Accept-encoding', 'gzip, deflate')]
 
     @staticmethod
     def get_name():
@@ -64,7 +67,13 @@ class UrlProvider(Provider):
     def _query_engine(self, param):
         query = self.make_query(param)
         results = self.opener.open(query, timeout=TIMEOUT)
-        html = results.read()
+        html = None
+        if results.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO(results.read())
+            f = gzip.GzipFile(fileobj=buf)
+            html = f.read()
+        else:
+            html = results.read()
         return html
 
     def make_query(self, param):
