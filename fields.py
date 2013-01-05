@@ -256,9 +256,10 @@ class FieldManager():
         if config['class'] in self.fields:
             fieldclass_ = self.fields[config['class']]
         else:
-            logging.error("FieldManager: loading field '%s'"
-                          " with wrong class '%s'.",
-                          config['name'], config['class'])
+            logging.error(
+                ("FieldManager: loading field '%s' with wrong"
+                    "class '%s'."),
+                config['name'], config['class'])
             raise FieldClassNotFound('Field class ' + config['class'] +
                                      ' not found.')
         # Multivalue

@@ -135,20 +135,6 @@ class FileAlchemy(File):
         for field in fields.values():
             id_ = field.get_id()
             if field.class_ == 'ref':
-                # if not field.is_multivalue():
-                #     ref = getattr(item, id_ + '_relation')
-                #     if ref is not None:
-                #         out[id_] = getattr(ref, field.ref_field)
-                #     else:
-                #         out[id_] = ''
-                #     del ref
-                # else:
-                #     refs = getattr(item, id_ + '_relation')
-                #     out[id_] = []
-                #     for i in refs:
-                #         ref = getattr(i, 'ref')
-                #         if hasattr(ref, field.ref_field):
-                #             out[id_].append(getattr(ref, field.ref_field))
                 out[id_] = self._load_reference(field,)
             elif field.is_multivalue():
                 out[id_] = item[id_].copy()
@@ -158,7 +144,7 @@ class FileAlchemy(File):
 
 
 class Alchemy(object):
-    """ Alchemy connects the PersistenceAlchemy with the sessions
+    """Alchemy connects the PersistenceAlchemy with the sessions
      of SQLAlchemy"""
 
     _instance = None
@@ -181,10 +167,6 @@ class Alchemy(object):
         filters = {}
         for i in [FilterEquals, FilterLike]:
             filters[i.get_id()] = i()
-        # i = FilterEquals()
-        # filters[i.get_id()] = i
-        # i = FilterLike()
-        # filters[i.get_id()] = i
         return filters
 
     @staticmethod
@@ -204,6 +186,8 @@ class Alchemy(object):
         if not key in self.engine:
             self.engine[key] = create_engine(
                 'sqlite:///' + key,
+                # TODO provar suport mysql
+                #"mysql://root@localhost/collector",
                 connect_args={'check_same_thread': False},
                 poolclass=StaticPool,
                 echo=Alchemy.echo)

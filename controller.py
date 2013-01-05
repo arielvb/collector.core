@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Collector - Frontcontroller and Helpers
-=======================================
+Frontcontroller and Helpers
+===========================
 
-The frontcontroller puts together the pieces of the engine, offering a common
+The frontcontroller puts together the pieces of the core, offering a common
  point of access. The frontcontroller, *Collector*, is defined as a singleton
  class, that means you can't create more that one instance.
 
 More over offers shortcuts (methods) to acces to the more common properties,
  one of this shortcuts is *get_manager*
 """
-from collection import Collection
+from collection import Collection, Folder
 from config import Config
 from persistence import PersistenceManager
 from plugin import PluginManager
@@ -49,7 +49,7 @@ class Collector(object):
         # System plug-ins
         from collector.plugins import get_sys_plugins
         plugins = get_sys_plugins()
-        # Dictionary compression is avaible for >= python 2.7
+        # >= python 2.7
         sys_plugins = {plugin.get_id(): plugin for plugin in plugins}
         plugin_manager = PluginManager.get_instance(
             self.conf('plugins_enabled'),
@@ -150,11 +150,9 @@ class Collector(object):
         fil = collection.get(id_)
         if fil is None:
             raise ValueError("File identifier not valid")
-        # TODO references value
         for key, item in collection.schema.file.items():
             if item.is_multivalue():
-                # TODO multivalue keys loop
-                # it new data has the current field
+                # if new data has the current field
                 if key in data:
                     # the current file couldn't have the field
                     if not key in fil:
@@ -168,11 +166,14 @@ class Collector(object):
                         for i in values:
                             if not i in fil[key]:
                                 if item.class_ == 'ref':
-                                    # TODO reference values
-                                    continue
+                                    # TODO test!
+                                    data = self._get_or_create(
+                                        field.ref_collection,
+                                        field.ref_field,
+                                        i)
+                                    fil[key].append(data)
                                 else:
                                     fil[key].append(i)
-                                #fil[key].append(i)
                 continue
             # Check if some field exists or is empty
             complete = False
@@ -217,6 +218,9 @@ class Collector(object):
     def _get_or_create(cls, collection, key, value):
         """Looks if exists any entry that matches key==value, if not
          it creates one"""
+        # If collection is not a Folder, assume is the identifier and load it
+        if collection is not type(Folder):
+            collection = self.managers['collection'].get_collection(collection)
         exists = collection.filter([{'equals': [key, value]}])
         if len(exists) == 0:
             return collection.save({key: value})

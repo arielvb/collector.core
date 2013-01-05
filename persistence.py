@@ -35,7 +35,6 @@ class Persistence(object):
         self.subcollection = schema.id
         self.params = params
 
-    #@abstractmethod
     def addfile(self, filename, mode):
         """Persists a file, it will add to the storage if mode is always or
          if mode is *http* will copy only http resources. Also exists a
@@ -113,6 +112,8 @@ class PersistenceDict(Persistence):
         self.items = []
         self.data_storage = None
         self.memory = False
+        self.class_ = type(str(schema.collection + "_" + schema.id),
+                           (FileDict,), {"schema": schema.id})
         # configure
         self.configure()
 
@@ -164,7 +165,6 @@ class PersistenceDict(Persistence):
         return objects
 
     def get(self, _id):
-        # TODO validate id is integer
         if isinstance(_id, str):
             _id = int(_id)
         for item in self.items:
@@ -172,7 +172,7 @@ class PersistenceDict(Persistence):
                 return FileDict(item)
         return None
 
-    def get_all(self, start_at, limit):
+    def get_all(self, start_at, limit, order=None):
         """Returns all the items starting at *start_at*, the results could
          be limited whit *limit*"""
         result = []

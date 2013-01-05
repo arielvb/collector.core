@@ -41,24 +41,22 @@ class Folder(object):
         """ Finds all the items, optinally results could be called
             using startAt and limit, useful for pagination.
         """
-        # TODO validate startAt and limit are integers
         return self.persistence.get_all(start_at, limit, order)
 
     def save(self, obj):
         """Save the objet adding it to the file"""
         copy = Config.get_instance().get('copy')
-        if copy != 'never':
-            for i in self.schema.file.values():
-                # TODO support other types of file
-                if i.class_ == "image":
-                    if i.is_multivalue():
-                        raise Exception("Multivalue for images isn't"
-                                        "supported")
-                    value = obj[i.get_id()]
-                    # TODO multivalue support for files
-                    value = self.persistence.addfile(value, copy)
-                    if value is not None:
-                        obj[i.get_id()] = value
+        for i in self.schema.file.values():
+            # Adding files to the collection
+            if i.class_ == "image":
+                if i.is_multivalue():
+                    raise Exception("Multivalue for images isn't"
+                                    "supported")
+                value = obj[i.get_id()]
+                # TODO multivalue support for files
+                value = self.persistence.addfile(value, copy)
+                if value is not None:
+                    obj[i.get_id()] = value
 
         return self.persistence.save(obj)
 

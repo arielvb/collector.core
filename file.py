@@ -14,6 +14,8 @@ class File(object):
     """Marker for each item that must be a File. Be carefull this class isn't
      abstract (abc) to avoid errors with sqlalchemy."""
 
+    schema = None
+
     def get(self, field, load_reference=True):
         """Returns the value for the requested field, if the field is a
          reference returns the referenced value by default, this can be

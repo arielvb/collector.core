@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""""Diferent file storage methods"""
+"""Diferent file storage methods"""
 from abc import ABCMeta, abstractmethod, abstractproperty
 import pickle
 import json
