@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Schema is the way of repressent a collection"""
+from fields import FieldManager
 
 
 class Schema(object):
@@ -6,88 +8,63 @@ class Schema(object):
         Schema class
     """
 
-    def __init__(self, configDict=None):
+    def __init__(self, collection, id_, params=None):
         super(Schema, self).__init__()
+        self.id = id_
+        self.collection = collection
         self.name = None
-        self.fields = {}
+        self.file = {}
         self.order = []
         # TODO icona e imatge per defecte
         self.ico = None
         self.image = None
-        if isinstance(configDict, dict):
-            self._raw = configDict
-            self.loadFromDict(configDict)
+        self._raw = params
+        self.default = None
+        if isinstance(params, dict):
+            self.read_params(params)
 
-    def loadFromDict(self, config):
-        """Loads schema from a python dictionary"""
+    def add_field(self, field):
+        """Adds a field to the schema"""
+        self.file[field.get_id()] = field
+        if self.default is None:
+            self.default = field.get_id()
+
+    def get_field(self, identifier):
+        """Rerturns the field with the requested identifier"""
+        return self.file[identifier]
+
+    def read_params(self, config):
+        """Loads schema values from a python dictionary"""
         self.name = config['name']
         fields = config['fields']
-        self.fields = fields
-        # for field in fields:
-        #     if Field.validate(fields[field]):
-        #         self.fields[field] = fields[field]
-        #     else:
-        #         raise Exception('Field ' + field + ' not valid')
+        self.file = {}
+        manager = FieldManager.get_instance()
+        for field in fields.items():
+            self.file[field[0]] = manager.get(field[1])
+
         if 'order' in config:
             self.order = []
             for item in config['order']:
-                if item in self.fields:
+                if item in self.file:
                     self.order.append(item)
-            # TODO what happens if one field key is not in the order values?
+            # what happens if one field key is not in the order values?
             if len(self.order) != len(fields):
-                raise Exception('Order must defeine all the fields')
+                raise Exception('Order must define all the fields')
         else:
             self.order = fields.keys()
         if 'default' in config:
             self.default = config['default']
         else:
-            self.default = self.fields[0]
+            self.default = self._firstprettyfield()
         if 'ico' in config:
             self.ico = config['ico']
         if 'image' in config:
             self.image = config['image']
 
-    def isMultivalue(self, field):
-        """ Returns True if the field is multivalue """
-        if 'multiple' in self.fields[field]:
-            return self.fields[field]['multiple']
-        else:
-            return False
-
-counter = 0
-
-
-# class SchemaManager():
-
-#     def __init__(self):
-#         global counter
-#         counter += 1
-#         if counter > 1:
-#             raise Exception('Called more than once')
-#         self.schemas = {}
-#         # TODO the schemas must be provieded by a SchemaConfig
-#         schemas = mocks.collections['boardgames']['schemas']
-#         self.schemas['boardgames'] = Schema(schemas['boardgames'])
-#         self.schemas['people'] = Schema(schemas['people'])
-
-#     def get(self, name):
-#         #TODO implement
-#         if name in self.schemas:
-#             return self.schemas[name]
-#         else:
-#             raise Exception('Schema not found')
-
-#     def update(self, schema):
-#         #TODO
-#         raise Exception("Not implemented")
-
-#     def create(self, schema):
-#         #TODO
-#         raise Exception("Not implemented")
-
-#     @staticmethod
-#     def getInstance():
-#         global _schemaManagerInstance
-#         return _schemaManagerInstance
-
-# _schemaManagerInstance = SchemaManager()
+    def _firstprettyfield(self):
+        """Returns the first text field"""
+        for i in self.order:
+            if self.file[i].class_ == 'text':
+                return i
+        # No text found, return id
+        return 'id'
